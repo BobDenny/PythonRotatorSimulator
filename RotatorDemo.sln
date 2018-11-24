@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.28307.106
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Rotator", "Rotator\Rotator.pyproj", "{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}"
 EndProject
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TestBed", "TestBed\TestBed.pyproj", "{77C12E96-CF1A-4AA0-AB0E-8927C4C137AE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,8 @@ Global
 		{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{77C12E96-CF1A-4AA0-AB0E-8927C4C137AE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77C12E96-CF1A-4AA0-AB0E-8927C4C137AE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
