@@ -41,11 +41,7 @@ svrtransid = 0                                           # Counts up
 # Models and Wrapper Classes
 # ==========================
 
-m_CommonRequest = api.model('CommonRequest',
-                                {   'DeviceNumber'           : fields.Integer(0, description='Zero-based device number as set on the server', required=True),
-                                    'ClientID'               : fields.Integer(1, description='Client\'s unique ID'),
-                                    'ClientTransactionID'    : fields.Integer(1234, description='Client\'s transaction ID'),
-                                })
+
 # ------------
 # BoolResponse
 # ------------
@@ -54,7 +50,7 @@ class BoolResponse(dict):
         global svrtransid
         svrtransid += 1
         self.Value = value
-        self.ClientTransactionIDForm = 0
+        self.ClientTransactionIDForm = clitransid
         self.ServerTransactionID = svrtransid
         self.Method = method
         self.ErrorNumber = 0
@@ -77,7 +73,7 @@ class MethodResponse(dict):
     def __init__(self, method, clitransid):
         global svrtransid
         svrtransid += 1
-        self.ClientTransactionIDForm = 0
+        self.ClientTransactionIDForm = clitransid
         self.ServerTransactionID = svrtransid
         self.Method = method
         self.ErrorNumber = 0
@@ -108,8 +104,8 @@ class CanReverse(Resource):
     #@api.expect(m_CommonRequest)
     def get(self, DeviceNumber):
         devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get('ClientID', 1)
-        R = BoolResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1234))
+        cid = request.args.get('ClientID', 1234)
+        R = BoolResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -117,27 +113,38 @@ class CanReverse(Resource):
 # Reverse
 # -------
 #
+
 @api.route('/<int:DeviceNumber>/Reverse', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
-@api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
 class Reverse(Resource):
 
+    m_ReverseValue = api.model('ReverseValue',
+                    {'Reverse'               : fields.Boolean(False, description='True if the rotation and angular ' + 
+                                                                        'direction must be reversed to match the optical ' +
+                                                                        'characteristics', required=True),
+                    'ClientID'               : fields.Integer(1, description='Client\'s unique ID'),
+                    'ClientTransactionID'    : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+    
     @api.doc(description='Returns the Rotator\'s <b>Reverse</b> state')
     @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         devno = DeviceNumber
-        cid = request.args.get('ClientID', 1)
-        R = BoolResponse(reverse, request.method, request.args.get('ClientTransactionID', 1234))
+        cid = request.args.get('ClientID', 1234)
+        R = BoolResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state')
     @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_ReverseValue)
     def put(self, DeviceNumber):
-        devno = DeviceNumber
-        cid = request.args.get('ClientID', 1)
+        global reverse
+        devno = DeviceNumber                            # Whatever this might be used for
+        cid = api.payload['ClientID']                   # Ditto
         reverse = api.payload['Reverse']
-        R = MethodResponse(request.method, request.args.get('ClientTransactionID', 1234))
+        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
         return vars(R)
 
 
