@@ -11,13 +11,12 @@ from flask_restplus import Api, Resource, fields
 #
 app = Flask(__name__)
 blueprint = Blueprint('Rotator', __name__, url_prefix='/API/V1/Rotator')   # Create a URL prefix for the whole application
-api = Api()
+api = Api(default='Rotator', default_label='<h2>ASCOM REST V1 for Rotator Devices: Base URL = <tt>/API/V1/Rotator')
 api.init_app(blueprint, 
                 version = '1.0',
                 title='ASCOM Rotator Simulator API', 
-                description='This device is an ASCOM Rotator simulator that responds to the standard REST API for Rotator')
+                description='<h2>This device is an ASCOM Rotator simulator that responds to the standard REST API for Rotator</h2>')
 app.register_blueprint(blueprint)
-
 
 # =========
 # App State
@@ -41,6 +40,7 @@ svrtransid = 0                                           # Counts up
 # Models and Wrapper Classes
 # ==========================
 
+m_ErrorMessage = api.model('ErrorMessage', {'Value' : fields.String(description='Error message', required=True)})
 
 # ------------
 # BoolResponse
@@ -94,15 +94,19 @@ m_MethodResponse = api.model('MethodResponse',
 
 @api.route('/<int:DeviceNumber>/CanReverse', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
-@api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
-##@api.doc(description='This is a class test') Probably shows in all methods
+#@api.doc(description='This is a class test') #Probably shows in all methods
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CanReverse(Resource):
 
     @api.doc(description='True if the Rotator supports the <b>Reverse</b> method')
     @api.marshal_with(m_BoolResponse, description='Driver response')
-    #@api.expect(m_CommonRequest)
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            api.abort(404)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
         R = BoolResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1))
@@ -116,6 +120,10 @@ class CanReverse(Resource):
 
 @api.route('/<int:DeviceNumber>/Reverse', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+#@api.doc(description='This is a class test') #Probably shows in all methods
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Reverse(Resource):
 
     m_ReverseValue = api.model('ReverseValue',
@@ -131,6 +139,8 @@ class Reverse(Resource):
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            api.abort(404)
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
         R = BoolResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
@@ -141,6 +151,8 @@ class Reverse(Resource):
     @api.expect(m_ReverseValue)
     def put(self, DeviceNumber):
         global reverse
+        if (DeviceNumber != 0):
+            api.abort(404)
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         reverse = api.payload['Reverse']
