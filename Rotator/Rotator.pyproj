@@ -31,7 +31,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
-    <Content Include="static\ASCOM-Logo.jpg" />
+    <Content Include="static\ASCOM-Logo.jpg">
+      <Publish>True</Publish>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">

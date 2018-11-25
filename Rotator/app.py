@@ -2,7 +2,7 @@
 # https://exploreflask.com/en/latest/views.html#url-converters
 
 import os
-from flask import Flask, Blueprint, request
+from flask import Flask, Blueprint, request, abort
 from flask_restplus import Api, Resource, fields
 
 # ===============================
@@ -19,9 +19,10 @@ api = Api(default='Rotator',
             contact='Bob Denny, DC-3 Dreams, SP',
             contact_email='rdenny@dc3.com',
             version='1.0.0-oas3')
+
 api.init_app(blueprint, 
             version = '1.0',
-            title='ASCOM Rotator Simulator API', 
+            title='ASCOM Rotator Simulator', 
             description='<h2><img src=\'static/Bug72T.jpg\' align=\'right\' width=\'72\' ' + 
                 'height=\'84\' />This device is an ASCOM Rotator simulator that responds to ' +
                 'the standard REST API for Rotator</h2>')
@@ -53,14 +54,61 @@ svrtransid = 0                                           # Counts up
 
 m_ErrorMessage = api.model('ErrorMessage', {'Value' : fields.String(description='Error message', required=True)})
 
-# -----------------
-# ScalarPropResponse
-# -----------------
-# Construct the response fpor a property-get of a scalar. Common
-# to all of the properties in this driver. Models (see below) 
+# --------------------
+# INPUTS (PUT methods)
+# --------------------
+m_ConnectedValue = api.model('ConnectedValue',
+                    {   'Connected'                 : fields.Boolean(False, description='Set True to connect to the device hardware, set False to ' +
+                                                                        'disconnect from the device hardware', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+    
+m_ActionValue = api.model('ActionValue',
+                    {   'Action'                    : fields.String('', description='A well known name that represents the action to be carried out.', required=True),
+                        'Parameters'                : fields.String('', description='List of parameters or empty string if none are required.', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+
+m_CommandValues = api.model('CommandValues',
+                    {   'Command'                   : fields.String('', description='The literal command string to be transmitted', required=True),
+                        'Raw'                       : fields.Boolean('', description='If set to true the string is transmitted \'as-is\', ' +
+                                                                        'if set to false then protocol framing characters may be added prior ' +
+                                                                        'to transmission', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+    
+m_ReverseValue = api.model('ReverseValue',
+                    {   'Reverse'                   : fields.Boolean(False, description='True if the rotation and angular ' + 
+                                                                        'direction must be reversed to match the optical ' +
+                                                                        'characteristics', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+    
+m_RelPosValue = api.model('RelPosValue',
+                    {   'Position'                  : fields.Float(0.0, description='Angle to move in degrees relative to the current <b>Position</b>.', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+    
+m_AbsPosValue = api.model('AbsPosValue',
+                    {   'Position'                  : fields.Float(0.0, description='Destination mechanical angle to which the rotator will move (degrees).', required=True),
+                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+
+
+# ------------------
+# PropertyResponse
+# ------------------
+# Construct the response for a property-get. Common to all
+# of the properties in this driver. Models (see below) 
 # differ to specify data type and documentation of Value.
 #
-class ScalarPropResponse(dict):
+class PropertyResponse(dict):
     def __init__(self, value, method, clitransid):
         global svrtransid
         svrtransid += 1
@@ -73,13 +121,40 @@ class ScalarPropResponse(dict):
         self.DriverException = None
 
 m_BoolResponse = api.model('BoolResponse', 
-                                {   'Value'                   : fields.Boolean(description='True or False value.', required=True),
-                                    'ClientTransactionIDForm' : fields.Integer(description='Client\'s transaction ID.'),
-                                    'ServerTransactionID'     : fields.Integer(description='Server\'s transaction ID.'),
-                                    'Method'                  : fields.String(description='Name of the calling method.'),
-                                    'ErrorNumber'             : fields.Integer(description='Error number from device.'),
-                                    'ErrorMessage'            : fields.String(description='Error message description from device.')
-                                })
+                    {   'Value'                     : fields.Boolean(description='True or False value.', required=True),
+                        'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
+                        'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
+                        'Method'                    : fields.String(description='Name of the calling method.'),
+                        'ErrorNumber'               : fields.Integer(description='Error number from device.'),
+                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                    })
+
+m_FloatResponse = api.model('FloatResponse', 
+                    {   'Value'                     : fields.Float(description='Double value.', required=True),
+                        'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
+                        'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
+                        'Method'                    : fields.String(description='Name of the calling method.'),
+                        'ErrorNumber'               : fields.Integer(description='Error number from device.'),
+                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                    })
+
+m_StringResponse = api.model('StringResponse', 
+                    {   'Value'                     : fields.String(description='String value.', required=True),
+                        'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
+                        'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
+                        'Method'                    : fields.String(description='Name of the calling method.'),
+                        'ErrorNumber'               : fields.Integer(description='Error number from device.'),
+                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                    })
+
+m_StringListResponse = api.model('StringListResponse', 
+                    {   'Value'                     : fields.List(fields.String(), description='List of string values.', required=True),
+                        'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
+                        'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
+                        'Method'                    : fields.String(description='Name of the calling method.'),
+                        'ErrorNumber'               : fields.Integer(description='Error number from device.'),
+                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                    })
 
 # --------------
 # MethodResponse
@@ -97,16 +172,262 @@ class MethodResponse(dict):
         self.DriverException = None
 
 m_MethodResponse = api.model('MethodResponse', 
-                                {   'ClientTransactionIDForm' : fields.Integer(description='Client\'s transaction ID.'),
-                                    'ServerTransactionID'     : fields.Integer(description='Server\'s transaction ID.'),
-                                    'Method'                  : fields.String(description='Name of the calling method.'),
-                                    'ErrorNumber'             : fields.Integer(description='Error number from device.'),
-                                    'ErrorMessage'            : fields.String(description='Error message description from device.')
-                               })
+                    {   'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
+                        'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
+                        'Method'                    : fields.String(description='Name of the calling method.'),
+                        'ErrorNumber'               : fields.Integer(description='Error number from device.'),
+                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                    })
 
 # ==============================
 # API ENDPOINTS (REST Resources)
 # ==============================
+
+
+# ------
+# Action
+# ------
+#
+@api.route('/<int:DeviceNumber>/Action', methods=['PUT'])
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class Action(Resource):
+
+    @api.doc(description='Invokes the specified device-specific action.')
+    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_ActionValue)
+    def put(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        else:
+            abort(400, 'Action() not implemented in this driver.')
+
+
+# ------------
+# CommandBlind
+# ------------
+#
+@api.route('/<int:DeviceNumber>/CommandBlind', methods=['PUT'])
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class CommandBlind(Resource):
+
+    @api.doc(description='Transmits an arbitrary string to the device and does not wait for a response. ' +
+                        'Optionally, protocol framing characters may be added to the string before transmission..')
+    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_CommandValues)
+    def put(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        else:
+            abort(400, 'CommandBlind() not implemented in this driver.')
+
+
+# -----------
+# CommandBool
+# -----------
+#
+@api.route('/<int:DeviceNumber>/CommandBool', methods=['PUT'])
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class CommandBool(Resource):
+
+    @api.doc(description='Transmits an arbitrary string to the device and waits for a boolean response. ' +
+                        'Optionally, protocol framing characters may be added to the string before transmission..')
+    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_CommandValues)
+    def put(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        else:
+            abort(400, 'CommandBool() not implemented in this driver.')
+
+
+# -------------
+# CommandString
+# -------------
+#
+@api.route('/<int:DeviceNumber>/CommandString', methods=['PUT'])
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class CommandString(Resource):
+
+    @api.doc(description='Transmits an arbitrary string to the device and waits for a string response. ' +
+                        'Optionally, protocol framing characters may be added to the string before transmission..')
+    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_CommandValues)
+    def put(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        else:
+            abort(400, 'CommandString() not implemented in this driver.')
+
+
+# ---------
+# Connected
+# ---------
+#
+@api.route('/<int:DeviceNumber>/Connected', methods=['GET','PUT'])
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class Connected(Resource):
+
+    @api.doc(description='Retrieves the connected state of the Rotator.')
+    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber
+        cid = request.args.get('ClientID', 1234)
+        R = PropertyResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
+    @api.doc(description='Sets the connected state of the Rotator.')
+    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_ConnectedValue)
+    def put(self, DeviceNumber):
+        global reverse
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                            # Whatever this might be used for
+        cid = api.payload['ClientID']                   # Ditto
+        connected = api.payload['Connected']
+        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        return vars(R)
+
+# -----------
+# Description
+# -----------
+#
+@api.route('/<int:DeviceNumber>/Description', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class Description(Resource):
+
+    @api.doc(description='The description of the device itself.')
+    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        desc = 'Simulated Rotator implemented in Python.'
+        R = PropertyResponse(desc, request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
+
+# ----------
+# DriverInfo
+# ----------
+#
+@api.route('/<int:DeviceNumber>/DriverInfo', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class DriverInfo(Resource):
+
+    @api.doc(description='The description of the driver.')
+    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        desc = 'ASCOM REST driver for a simulated Rotator.'
+        R = PropertyResponse(desc, request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
+
+# -------------
+# DriverVersion
+# -------------
+#
+@api.route('/<int:DeviceNumber>/DriverVersion', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class DriverInfo(Resource):
+
+    @api.doc(description='A string containing only the major and minor version of the driver.')
+    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        R = PropertyResponse('0.1', request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
+
+# ----
+# Name
+# ----
+#
+@api.route('/<int:DeviceNumber>/Name', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class Name(Resource):
+
+    @api.doc(description='The name of the device.')
+    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        R = PropertyResponse('Rotator Simulator', request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
+
+# ----------------
+# SupportedActions
+# ----------------
+#
+@api.route('/<int:DeviceNumber>/SupportedActions', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
+@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class SupportedActions(Resource):
+
+    @api.doc(description='The name of the device.')
+    @api.marshal_with(m_StringListResponse, description='List of supported <b>Action()</b> commands.')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(404, 'No such DeviceNumber or Endpoint.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        R = PropertyResponse([], request.method, request.args.get('ClientTransactionID', 1))
+        return vars(R)
+
 
 # ----------
 # CanReverse
@@ -114,7 +435,6 @@ m_MethodResponse = api.model('MethodResponse',
 #
 @api.route('/<int:DeviceNumber>/CanReverse', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
 @api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
 @api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
@@ -126,10 +446,10 @@ class CanReverse(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -151,10 +471,10 @@ class IsMoving(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(is_moving, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(is_moving, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -164,22 +484,21 @@ class IsMoving(Resource):
 #
 @api.route('/<int:DeviceNumber>/Position', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
 @api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
 @api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Position(Resource):
 
     @api.doc(description='Current instantaneous Rotator mechanical angle (degrees).')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Driver response')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(position, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(position, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -187,33 +506,23 @@ class Position(Resource):
 # Reverse
 # -------
 #
-
 @api.route('/<int:DeviceNumber>/Reverse', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
 @api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
 @api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Reverse(Resource):
 
-    m_ReverseValue = api.model('ReverseValue',
-                    {'Reverse'               : fields.Boolean(False, description='True if the rotation and angular ' + 
-                                                                        'direction must be reversed to match the optical ' +
-                                                                        'characteristics', required=True),
-                    'ClientID'               : fields.Integer(1, description='Client\'s unique ID'),
-                    'ClientTransactionID'    : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
     @api.doc(description='Returns the Rotator\'s <b>Reverse</b> state.')
     @api.marshal_with(m_BoolResponse, description='Driver response')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
@@ -222,7 +531,7 @@ class Reverse(Resource):
     def put(self, DeviceNumber):
         global reverse
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         reverse = api.payload['Reverse']
@@ -243,15 +552,15 @@ class Reverse(Resource):
 class StepSize(Resource):
 
     @api.doc(description='The minimum angular step size (degrees).')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Driver response')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(step_size, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(step_size, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -268,15 +577,15 @@ class StepSize(Resource):
 class TargetPosition(Resource):
 
     @api.doc(description='The destination mechanical angle for <b>Move()</b> and <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Driver response')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = ScalarPropResponse(target_position, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(target_position, request.method, request.args.get('ClientTransactionID', 1))
         return vars(R)
 
 
@@ -298,7 +607,7 @@ class Halt(Resource):
     def put(self, DeviceNumber):
         ##TODO## Implement halting the rotator
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         R = MethodResponse(request.method, api.payload['ClientTransactionID'])
@@ -318,11 +627,6 @@ class Halt(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Move(Resource):
     
-    m_RelPosValue = api.model('RelPosValue',
-                    {'Position'              : fields.Float(0.0, description='Angle to move in degrees relative to the current <b>Position</b>.', required=True),
-                    'ClientID'               : fields.Integer(1, description='Client\'s unique ID'),
-                    'ClientTransactionID'    : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
     
     @api.doc(description='Causes the rotator to move <b>Position</b> degrees relative to the current <b>Position</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
@@ -330,7 +634,7 @@ class Move(Resource):
     def put(self, DeviceNumber):
         global target_position
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         target_position = position + float(api.payload['Position'])
         ##TODO## Implement relative moving the rotator
         devno = DeviceNumber                            # Whatever this might be used for
@@ -351,19 +655,13 @@ class Move(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class MoveAbsolute(Resource):
     
-    m_AbsPosValue = api.model('AbsPosValue',
-                    {'Position'              : fields.Float(0.0, description='Destination mechanical angle to which the rotator will move (degrees).', required=True),
-                    'ClientID'               : fields.Integer(1, description='Client\'s unique ID'),
-                    'ClientTransactionID'    : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
     @api.doc(description='Causes the rotator to move the absolute position of <b>Position</b> degrees.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_AbsPosValue)
     def put(self, DeviceNumber):
         global target_position
         if (DeviceNumber != 0):
-            api.abort(404)
+            abort(404, 'No such DeviceNumber or Endpoint.')
         target_position = float(api.payload['Position'])
         ##TODO## Implement absolute moving the rotator
         devno = DeviceNumber                            # Whatever this might be used for
