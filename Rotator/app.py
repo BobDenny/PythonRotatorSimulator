@@ -109,15 +109,15 @@ m_AbsPosValue = api.model('AbsPosValue',
 # differ to specify data type and documentation of Value.
 #
 class PropertyResponse(dict):
-    def __init__(self, value, method, clitransid):
+    def __init__(self, value, method, clitransid, err_num=0, err_msg=''):
         global svrtransid
         svrtransid += 1
         self.Value = value
         self.ClientTransactionIDForm = clitransid
         self.ServerTransactionID = svrtransid
         self.Method = method
-        self.ErrorNumber = 0
-        self.ErrorMessage = ''
+        self.ErrorNumber = err_num
+        self.ErrorMessage = err_msg
         self.DriverException = None
 
 m_BoolResponse = api.model('BoolResponse', 
@@ -161,14 +161,14 @@ m_StringListResponse = api.model('StringListResponse',
 # --------------
 #
 class MethodResponse(dict):
-    def __init__(self, method, clitransid):
+    def __init__(self, method, clitransid, err_num=0, err_msg=''):
         global svrtransid
         svrtransid += 1
         self.ClientTransactionIDForm = clitransid
         self.ServerTransactionID = svrtransid
         self.Method = method
-        self.ErrorNumber = 0
-        self.ErrorMessage = ''
+        self.ErrorNumber = errNum
+        self.ErrorMessage = err_msg
         self.DriverException = None
 
 m_MethodResponse = api.model('MethodResponse', 
