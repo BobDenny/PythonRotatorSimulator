@@ -10,12 +10,21 @@ from flask_restplus import Api, Resource, fields
 # ===============================
 #
 app = Flask(__name__)
-blueprint = Blueprint('Rotator', __name__, url_prefix='/API/V1/Rotator')   # Create a URL prefix for the whole application
-api = Api(default='Rotator', default_label='<h2>ASCOM REST V1 for Rotator Devices: Base URL = <tt>/API/V1/Rotator')
+blueprint = Blueprint('Rotator', __name__, 
+                      url_prefix='/API/V1/Rotator',
+                      static_folder='static')
+# Create a URL prefix for the whole application
+api = Api(default='Rotator', 
+            default_label='<h2>ASCOM REST V1 for Rotator Devices: Base URL = <tt>/API/V1/Rotator',
+            contact='Bob Denny, DC-3 Dreams, SP',
+            contact_email='rdenny@dc3.com',
+            version='1.0.0-oas3')
 api.init_app(blueprint, 
-                version = '1.0',
-                title='ASCOM Rotator Simulator API', 
-                description='<h2>This device is an ASCOM Rotator simulator that responds to the standard REST API for Rotator</h2>')
+            version = '1.0',
+            title='ASCOM Rotator Simulator API', 
+            description='<h2><img src=\'static/Bug72T.jpg\' align=\'right\' width=\'72\' ' + 
+                'height=\'84\' />This device is an ASCOM Rotator simulator that responds to ' +
+                'the standard REST API for Rotator</h2>')
 app.register_blueprint(blueprint)
 
 # =========
