@@ -5,9 +5,12 @@ import os
 from flask import Flask, Blueprint, request, abort
 from flask_restplus import Api, Resource, fields
 import ASCOMErrors
+import RotatorDevice
+
 
 # *TODO* Make path matching caseless
 # *TODO* Convert some 404s to 400s per ASCOM Spec
+# *TODO* Implement error on changing Reverse while moving
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -32,21 +35,11 @@ api.init_app(blueprint,
                 'the standard REST API for Rotator</h2>')
 app.register_blueprint(blueprint)
 
-# =========
-# App State
-# =========
+# ==============
+# Rotator Device
+# =============
 #
-# Including initialization (default contents)
-# 
-# State
-#
-position = 0.0 
-can_reverse = True
-reverse = False
-step_size = 1.0
-target_position = 0.0
-is_moving = False
-connected = False
+_ROT = RotatorDevice.RotatorDevice()
 
 #
 # Connection
@@ -292,7 +285,7 @@ class Connected(Resource):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(connected)
+        R = PropertyResponse(_ROT.connected)
         return vars(R)
 
     @api.doc(description='Sets the connected state of the Rotator.')
@@ -304,7 +297,7 @@ class Connected(Resource):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
-        connected = api.payload['Connected']
+        _ROT.connected = api.payload['Connected']
         R = MethodResponse()
         return vars(R)
 
@@ -442,12 +435,12 @@ class CanReverse(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(can_reverse)
+        R = PropertyResponse(_ROT.can_reverse)
         return vars(R)
 
 
@@ -468,12 +461,12 @@ class IsMoving(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(is_moving)
+        R = PropertyResponse(_ROT.is_moving)
         return vars(R)
 
 
@@ -494,12 +487,12 @@ class Position(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(position)
+        R = PropertyResponse(_ROT.position)
         return vars(R)
 
 
@@ -520,12 +513,12 @@ class Reverse(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(reverse)
+        R = PropertyResponse(_ROT.reverse)
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
@@ -535,12 +528,12 @@ class Reverse(Resource):
         global reverse
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
-        reverse = api.payload['Reverse']
+        _ROT.reverse = api.payload['Reverse']
         R = MethodResponse()
         return vars(R)
 
@@ -562,12 +555,12 @@ class StepSize(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(step_size)
+        R = PropertyResponse(_ROT.step_size)
         return vars(R)
 
 
@@ -588,12 +581,12 @@ class TargetPosition(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(target_position)
+        R = PropertyResponse(_ROT.target_position)
         return vars(R)
 
 
@@ -611,14 +604,14 @@ class Halt(Resource):
     @api.doc(description='Immediately stop any Rotator motion due to a previous <b>Move()</b> or <b>MoveAbsolute()</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
     def put(self, DeviceNumber):
-        ##TODO## Implement halting the rotator
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
+        _ROT.Halt()
         R = MethodResponse()
         return vars(R)
 
@@ -642,11 +635,10 @@ class Move(Resource):
         global target_position
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        target_position = position + float(api.payload['Position'])
-        ##TODO## Implement relative moving the rotator
+        _ROT.Move(position + float(api.payload['Position']))
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         R = MethodResponse()
@@ -671,11 +663,10 @@ class MoveAbsolute(Resource):
         global target_position
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not connected):
+        if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        target_position = float(api.payload['Position'])
-        ##TODO## Implement absolute moving the rotator
+        _ROT.Move(float(api.payload['Position']))
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         R = MethodResponse()
