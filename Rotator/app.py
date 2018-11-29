@@ -4,6 +4,10 @@
 import os
 from flask import Flask, Blueprint, request, abort
 from flask_restplus import Api, Resource, fields
+import ASCOMErrors
+
+# *TODO* Make path matching caseless
+# *TODO* Convert some 404s to 400s per ASCOM Spec
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -42,6 +46,7 @@ reverse = False
 step_size = 1.0
 target_position = 0.0
 is_moving = False
+connected = False
 
 #
 # Connection
@@ -109,15 +114,15 @@ m_AbsPosValue = api.model('AbsPosValue',
 # differ to specify data type and documentation of Value.
 #
 class PropertyResponse(dict):
-    def __init__(self, value, method, clitransid, err_num=0, err_msg=''):
+    def __init__(self, value, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
         self.Value = value
-        self.ClientTransactionIDForm = clitransid
+        self.ClientTransactionIDForm = request.args.get('ClientTransactionID', 1)
         self.ServerTransactionID = svrtransid
-        self.Method = method
-        self.ErrorNumber = err_num
-        self.ErrorMessage = err_msg
+        self.Method = request.method
+        self.ErrorNumber = err.Number
+        self.ErrorMessage = err.Message
         self.DriverException = None
 
 m_BoolResponse = api.model('BoolResponse', 
@@ -161,14 +166,14 @@ m_StringListResponse = api.model('StringListResponse',
 # --------------
 #
 class MethodResponse(dict):
-    def __init__(self, method, clitransid, err_num=0, err_msg=''):
+    def __init__(self, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
-        self.ClientTransactionIDForm = clitransid
+        self.ClientTransactionIDForm = api.payload['ClientTransactionID']
         self.ServerTransactionID = svrtransid
-        self.Method = method
-        self.ErrorNumber = errNum
-        self.ErrorMessage = err_msg
+        self.Method = request.method
+        self.ErrorNumber = err.Number
+        self.ErrorMessage = err.Message
         self.DriverException = None
 
 m_MethodResponse = api.model('MethodResponse', 
@@ -190,8 +195,7 @@ m_MethodResponse = api.model('MethodResponse',
 #
 @api.route('/<int:DeviceNumber>/Action', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Action(Resource):
 
@@ -199,11 +203,11 @@ class Action(Resource):
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_ActionValue)
     def put(self, DeviceNumber):
+        global connected
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
-        else:
-            abort(400, 'Action() not implemented in this driver.')
-
+            abort(400, 'No such DeviceNumber.')
+        R = MethodResponse(ASCOMErrors.NotImplemented)
+        return vars(R)
 
 # ------------
 # CommandBlind
@@ -211,8 +215,7 @@ class Action(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandBlind', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandBlind(Resource):
 
@@ -221,10 +224,11 @@ class CommandBlind(Resource):
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_CommandValues)
     def put(self, DeviceNumber):
+        global connected
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
-        else:
-            abort(400, 'CommandBlind() not implemented in this driver.')
+            abort(400, 'No such DeviceNumber.')
+        R = MethodResponse(ASCOMErrors.NotImplemented)
+        return vars(R)
 
 
 # -----------
@@ -233,8 +237,7 @@ class CommandBlind(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandBool', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandBool(Resource):
 
@@ -244,9 +247,9 @@ class CommandBool(Resource):
     @api.expect(m_CommandValues)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
-        else:
-            abort(400, 'CommandBool() not implemented in this driver.')
+            abort(400, 'No such DeviceNumber.')
+        R = MethodResponse(ASCOMErrors.NotImplemented)
+        return vars(R)
 
 
 # -------------
@@ -255,8 +258,7 @@ class CommandBool(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandString', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandString(Resource):
 
@@ -266,9 +268,9 @@ class CommandString(Resource):
     @api.expect(m_CommandValues)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
-        else:
-            abort(400, 'CommandString() not implemented in this driver.')
+            abort(400, 'No such DeviceNumber.')
+        R = MethodResponse(ASCOMErrors.NotImplemented)
+        return vars(R)
 
 
 # ---------
@@ -277,8 +279,7 @@ class CommandString(Resource):
 #
 @api.route('/<int:DeviceNumber>/Connected', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Connected(Resource):
 
@@ -288,23 +289,23 @@ class Connected(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(connected)
         return vars(R)
 
     @api.doc(description='Sets the connected state of the Rotator.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_ConnectedValue)
     def put(self, DeviceNumber):
-        global reverse
+        global connected
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         connected = api.payload['Connected']
-        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        R = MethodResponse()
         return vars(R)
 
 # -----------
@@ -313,8 +314,7 @@ class Connected(Resource):
 #
 @api.route('/<int:DeviceNumber>/Description', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Description(Resource):
 
@@ -324,11 +324,11 @@ class Description(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
         desc = 'Simulated Rotator implemented in Python.'
-        R = PropertyResponse(desc, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(desc)
         return vars(R)
 
 
@@ -338,8 +338,7 @@ class Description(Resource):
 #
 @api.route('/<int:DeviceNumber>/DriverInfo', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class DriverInfo(Resource):
 
@@ -349,11 +348,11 @@ class DriverInfo(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
         desc = 'ASCOM REST driver for a simulated Rotator.'
-        R = PropertyResponse(desc, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(desc)
         return vars(R)
 
 
@@ -363,8 +362,7 @@ class DriverInfo(Resource):
 #
 @api.route('/<int:DeviceNumber>/DriverVersion', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class DriverInfo(Resource):
 
@@ -374,10 +372,10 @@ class DriverInfo(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse('0.1', request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse('0.1')
         return vars(R)
 
 
@@ -387,8 +385,7 @@ class DriverInfo(Resource):
 #
 @api.route('/<int:DeviceNumber>/Name', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Name(Resource):
 
@@ -398,10 +395,10 @@ class Name(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse('Rotator Simulator', request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse('Rotator Simulator')
         return vars(R)
 
 
@@ -411,8 +408,7 @@ class Name(Resource):
 #
 @api.route('/<int:DeviceNumber>/SupportedActions', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class SupportedActions(Resource):
 
@@ -422,10 +418,10 @@ class SupportedActions(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse([], request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse([])
         return vars(R)
 
 
@@ -435,8 +431,7 @@ class SupportedActions(Resource):
 #
 @api.route('/<int:DeviceNumber>/CanReverse', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CanReverse(Resource):
 
@@ -446,10 +441,13 @@ class CanReverse(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(can_reverse, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(can_reverse)
         return vars(R)
 
 
@@ -459,9 +457,7 @@ class CanReverse(Resource):
 #
 @api.route('/<int:DeviceNumber>/IsMoving', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class IsMoving(Resource):
 
@@ -471,10 +467,13 @@ class IsMoving(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(is_moving, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(is_moving)
         return vars(R)
 
 
@@ -484,8 +483,7 @@ class IsMoving(Resource):
 #
 @api.route('/<int:DeviceNumber>/Position', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Position(Resource):
 
@@ -495,10 +493,13 @@ class Position(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(position, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(position)
         return vars(R)
 
 
@@ -508,8 +509,7 @@ class Position(Resource):
 #
 @api.route('/<int:DeviceNumber>/Reverse', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Reverse(Resource):
 
@@ -519,10 +519,13 @@ class Reverse(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(reverse, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(reverse)
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
@@ -531,11 +534,14 @@ class Reverse(Resource):
     def put(self, DeviceNumber):
         global reverse
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = MethodResponse(ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         reverse = api.payload['Reverse']
-        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        R = MethodResponse()
         return vars(R)
 
 
@@ -545,9 +551,7 @@ class Reverse(Resource):
 #
 @api.route('/<int:DeviceNumber>/StepSize', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class StepSize(Resource):
 
@@ -557,10 +561,13 @@ class StepSize(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(step_size, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(step_size)
         return vars(R)
 
 
@@ -570,9 +577,7 @@ class StepSize(Resource):
 #
 @api.route('/<int:DeviceNumber>/TargetPosition', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class TargetPosition(Resource):
 
@@ -582,10 +587,13 @@ class TargetPosition(Resource):
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        R = PropertyResponse(target_position, request.method, request.args.get('ClientTransactionID', 1))
+        R = PropertyResponse(target_position)
         return vars(R)
 
 
@@ -596,9 +604,7 @@ class TargetPosition(Resource):
 
 @api.route('/<int:DeviceNumber>/Halt', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Halt(Resource):
 
@@ -607,10 +613,13 @@ class Halt(Resource):
     def put(self, DeviceNumber):
         ##TODO## Implement halting the rotator
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
-        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        R = MethodResponse()
         return vars(R)
 
 
@@ -621,9 +630,7 @@ class Halt(Resource):
 
 @api.route('/<int:DeviceNumber>/Move', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-#@api.doc(description='This is a class test') #Probably shows in all methods
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Move(Resource):
     
@@ -634,12 +641,15 @@ class Move(Resource):
     def put(self, DeviceNumber):
         global target_position
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         target_position = position + float(api.payload['Position'])
         ##TODO## Implement relative moving the rotator
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
-        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        R = MethodResponse()
         return vars(R)
 
 
@@ -650,8 +660,7 @@ class Move(Resource):
 
 @api.route('/<int:DeviceNumber>/MoveAbsolute', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'Method or parameter value error, check error message', m_ErrorMessage)
-@api.response(404, 'No such DeviceNumber or Endpoint', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class MoveAbsolute(Resource):
     
@@ -661,12 +670,15 @@ class MoveAbsolute(Resource):
     def put(self, DeviceNumber):
         global target_position
         if (DeviceNumber != 0):
-            abort(404, 'No such DeviceNumber or Endpoint.')
+            abort(400, 'No such DeviceNumber.')
+        if (not connected):
+            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
         target_position = float(api.payload['Position'])
         ##TODO## Implement absolute moving the rotator
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
-        R = MethodResponse(request.method, api.payload['ClientTransactionID'])
+        R = MethodResponse()
         return vars(R)
 
 
