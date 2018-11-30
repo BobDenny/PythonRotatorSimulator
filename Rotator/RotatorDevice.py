@@ -17,7 +17,7 @@ class RotatorDevice(object):
         # Rotator device constants
         #
         self._can_reverse = True
-        self._step_size = 1.0 
+        self._step_size = 1.0
         self._steps_per_sec = 6
         #
         # Rotator device state variables
@@ -33,38 +33,64 @@ class RotatorDevice(object):
         self._timer = None
         self._interval = 1.0 / self._steps_per_sec
         self._stopped = True
-        self.start()                        # SELF STARTING
+        ####self.start()                        # SELF STARTING
 
     def start(self, from_run=False):
+        #print('[start] try to lock')
         self._lock.acquire()
+        #print('[start] got lock')
         if from_run or self._stopped:
             self._stopped = False
+            #print('[start] new timer')
             self._timer = Timer(self._interval, self._run)
+            #print('[start] now start the timer')
             self._timer.start()
+            #print('[start] timer started')
             self._lock.release()
+            #print('[start] lock released')
         else:
             self._lock.release()
+            #print('[start] lock released')
 
 
     def _run(self):
-        self.start(from_run = True)
+        #print('[_run] (tmr expired) get lock')
         self._lock.acquire()
+        #print('[_run] got lock : tgtpos=' + str(self._target_position) + ' pos=' + str(self._position))
         delta = self._target_position - self._position
-        if delta >= 360.0:
-            delta -= 360.0
-        if delta < 0.0:
-            delta += 360.0
-        if abs(delta) > self._step_size:
-            self._position = self._position + (self._step_size * [-1 if delta < 0 else 1])
-            print('pos=' + _self.position)
+        #if delta >= 360.0:
+        #    delta -= 360.0
+        #if delta < 0.0:
+        #    delta += 360.0
+        #    print('[_run] final delta = ' + str(delta))
+        if abs(delta) > (self._step_size / 2.0):
+            self._is_moving = True
+            if delta > 0:
+                #print('[_run] delta > 0 go positive')
+                self._position += self._step_size
+                if self._position >= 360.0:
+                    self._position -= 360.0
+            else:
+                #print('[_run] delta < 0 go negative')
+                self._position -= self._step_size
+                if self._position < 0.0:
+                    self._position += 360.0
+            print('[_run] new pos = ' + str(self._position))
+        else:
+            self._is_moving = False
+            self._stopped = True
         self._lock.release()
+        #print('[_run] lock released')
+        if self._is_moving:
+            #print('[_run] more motion needed, start another timer interval')
+            self.start(from_run = True)
 
     def stop(self):
         self._lock.acquire()
-        self.stopped = True
+        self._stopped = True
+        self._is_moving = False
         self._timer.cancel()
         self._lock.release()
-        pass
 
     #
     # Guarded properties
@@ -133,25 +159,23 @@ class RotatorDevice(object):
     # Methods
     #
     def Move(self, pos):
-        self._lock.acquire()
+        #self._lock.acquire()
+        self._isMoving = True
         self._target_position = self._position + pos
         if self.target_position >= 360.0:
             self.target_position -= 360.0
         if self.target_position < 0.0:
             self.target_position += 360.0
-        self._lock.release()
-        start()
+        #self._lock.release()
+        self.start()
 
     def MoveAbsolute(self, pos):
-        self._lock.acquire()
+        #self._lock.acquire()   *TODO* WHY THIS LOCKED (TYP)
+        self._is_moving = True
         self._target_position = pos
-        if self.target_position >= 360.0:
-            self.target_position -= 360.0
-        if self.target_position < 0.0:
-            self.target_position += 360.0
-        self._lock.release()
-        start()
+        #self._lock.release()
+        self.start()
 
     def Halt(self):
-        stop()
+        self.stop()
 

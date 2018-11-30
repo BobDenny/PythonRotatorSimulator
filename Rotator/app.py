@@ -98,6 +98,12 @@ m_AbsPosValue = api.model('AbsPosValue',
                         'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
                     })
 
+m_NoValue = api.model('NoPosValue',
+                    {   'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
+                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
+                    })
+
+
 
 # ------------------
 # PropertyResponse
@@ -292,12 +298,13 @@ class Connected(Resource):
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_ConnectedValue)
     def put(self, DeviceNumber):
-        global connected
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
+        print('> connecting')
         _ROT.connected = api.payload['Connected']
+        print('< connected')
         R = MethodResponse()
         return vars(R)
 
@@ -461,7 +468,7 @@ class IsMoving(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
@@ -487,7 +494,7 @@ class Position(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
@@ -513,7 +520,7 @@ class Reverse(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber
@@ -528,7 +535,7 @@ class Reverse(Resource):
         global reverse
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
@@ -555,7 +562,7 @@ class StepSize(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
@@ -581,7 +588,7 @@ class TargetPosition(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
@@ -603,10 +610,11 @@ class Halt(Resource):
 
     @api.doc(description='Immediately stop any Rotator motion due to a previous <b>Move()</b> or <b>MoveAbsolute()</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.expect(m_NoValue)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
         devno = DeviceNumber                            # Whatever this might be used for
@@ -632,11 +640,13 @@ class Move(Resource):
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_RelPosValue)
     def put(self, DeviceNumber):
-        global target_position
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            return vars(R)
+        if _ROT.is_moving:
+            R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
             return vars(R)
         _ROT.Move(position + float(api.payload['Position']))
         devno = DeviceNumber                            # Whatever this might be used for
@@ -660,13 +670,17 @@ class MoveAbsolute(Resource):
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.expect(m_AbsPosValue)
     def put(self, DeviceNumber):
-        global target_position
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        if (not _ROT.connected):
+        if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        _ROT.Move(float(api.payload['Position']))
+        if _ROT.is_moving:
+            R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
+            return vars(R)
+        print('> dev.Move()')
+        _ROT.MoveAbsolute(float(api.payload['Position']))
+        print('< ret from dev.move()')
         devno = DeviceNumber                            # Whatever this might be used for
         cid = api.payload['ClientID']                   # Ditto
         R = MethodResponse()
