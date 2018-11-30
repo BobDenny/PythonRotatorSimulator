@@ -2,42 +2,68 @@
 # Implements a Rotator device
 #
 
-import threading
-from threading import Thread
+from threading import Timer
+from threading import Lock
 
-class RotatorDevice(threading.Thread):
+class RotatorDevice(object):
     """Implements a rotator device that runs in a separate thread"""
-
-    #
-    # Rotator device constants
-    #
-    _can_reverse = True
-    _step_size = 1.0 
-    _steps_per_sec = 6
-
-    #
-    # Rotator device state variables
-    #
-    _reverse = False
-    _position = 0.0 
-    _target_position = 0.0
-    _is_moving = False
-    _connected = False
-    _lock = None
-
     #
     # Only override __init_()  and run() (pydoc 17.1.2)
     #
     def __init__(self):
-        self._lock = threading.Lock()
-        Thread.__init__(self)
+        self._lock = Lock()
         self.name = 'device'
+        #
+        # Rotator device constants
+        #
+        self._can_reverse = True
+        self._step_size = 1.0 
+        self._steps_per_sec = 6
+        #
+        # Rotator device state variables
+        #
+        self._reverse = False
         self._position = 0.0 
         self._target_position = 0.0
         self._is_moving = False
         self._connected = False
+        #
+        # Rotator engine
+        #
+        self._timer = None
+        self._interval = 1.0 / self._steps_per_sec
+        self._stopped = True
+        self.start()                        # SELF STARTING
 
-    def run(self):
+    def start(self, from_run=False):
+        self._lock.acquire()
+        if from_run or self._stopped:
+            self._stopped = False
+            self._timer = Timer(self._interval, self._run)
+            self._timer.start()
+            self._lock.release()
+        else:
+            self._lock.release()
+
+
+    def _run(self):
+        self.start(from_run = True)
+        self._lock.acquire()
+        delta = self._target_position - self._position
+        if delta >= 360.0:
+            delta -= 360.0
+        if delta < 0.0:
+            delta += 360.0
+        if abs(delta) > self._step_size:
+            self._position = self._position + (self._step_size * [-1 if delta < 0 else 1])
+            print('pos=' + _self.position)
+        self._lock.release()
+
+    def stop(self):
+        self._lock.acquire()
+        self.stopped = True
+        self._timer.cancel()
+        self._lock.release()
         pass
 
     #
@@ -106,12 +132,26 @@ class RotatorDevice(threading.Thread):
     #
     # Methods
     #
-    def Move(self, position):
-        pass
+    def Move(self, pos):
+        self._lock.acquire()
+        self._target_position = self._position + pos
+        if self.target_position >= 360.0:
+            self.target_position -= 360.0
+        if self.target_position < 0.0:
+            self.target_position += 360.0
+        self._lock.release()
+        start()
 
-    def MoveAbsolute(self, position):
-        pass
+    def MoveAbsolute(self, pos):
+        self._lock.acquire()
+        self._target_position = pos
+        if self.target_position >= 360.0:
+            self.target_position -= 360.0
+        if self.target_position < 0.0:
+            self.target_position += 360.0
+        self._lock.release()
+        start()
 
     def Halt(self):
-        pass
+        stop()
 
