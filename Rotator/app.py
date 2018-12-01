@@ -7,16 +7,30 @@ from flask_restplus import Api, Resource, fields
 import ASCOMErrors
 import RotatorDevice
 
+# Make routing caseless
+# http://librelist.com/browser/flask/2011/6/24/case-insensitive-routing/#198dd20c7198760b3e2f5d5ada19b7f9
+import re
+from werkzeug.routing import Rule, RequestRedirect
 
-# *TODO* Make path matching caseless
-# *TODO* Convert some 404s to 400s per ASCOM Spec
+class CIRule(Rule):
+    def compile(self):
+        Rule.compile(self)
+        self._regex = re.compile(self._regex.pattern,
+                                 re.UNICODE | re.IGNORECASE)
+
+class CIFlask(Flask):
+    url_rule_class = CIRule
+
+
 # *TODO* Implement error on changing Reverse while moving
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
 # ===============================
 #
-app = Flask(__name__)
+#app = Flask(__name__)
+app = CIFlask(__name__)             # Case independent Flask (wow)
+
 blueprint = Blueprint('Rotator', __name__, 
                       url_prefix='/API/V1/Rotator',
                       static_folder='static')
@@ -51,59 +65,6 @@ svrtransid = 0                                           # Counts up
 # ==========================
 
 m_ErrorMessage = api.model('ErrorMessage', {'Value' : fields.String(description='Error message', required=True)})
-
-# --------------------
-# INPUTS (PUT methods)
-# --------------------
-m_ConnectedValue = api.model('ConnectedValue',
-                    {   'Connected'                 : fields.Boolean(False, description='Set True to connect to the device hardware, set False to ' +
-                                                                        'disconnect from the device hardware', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
-m_ActionValue = api.model('ActionValue',
-                    {   'Action'                    : fields.String('', description='A well known name that represents the action to be carried out.', required=True),
-                        'Parameters'                : fields.String('', description='List of parameters or empty string if none are required.', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-
-m_CommandValues = api.model('CommandValues',
-                    {   'Command'                   : fields.String('', description='The literal command string to be transmitted', required=True),
-                        'Raw'                       : fields.Boolean('', description='If set to true the string is transmitted \'as-is\', ' +
-                                                                        'if set to false then protocol framing characters may be added prior ' +
-                                                                        'to transmission', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
-m_ReverseValue = api.model('ReverseValue',
-                    {   'Reverse'                   : fields.Boolean(False, description='True if the rotation and angular ' + 
-                                                                        'direction must be reversed to match the optical ' +
-                                                                        'characteristics', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
-m_RelPosValue = api.model('RelPosValue',
-                    {   'Position'                  : fields.Float(0.0, description='Angle to move in degrees relative to the current <b>Position</b>.', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-    
-m_AbsPosValue = api.model('AbsPosValue',
-                    {   'Position'                  : fields.Float(0.0, description='Destination mechanical angle to which the rotator will move (degrees).', required=True),
-                        'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-
-m_NoValue = api.model('NoPosValue',
-                    {   'ClientID'                  : fields.Integer(1, description='Client\'s unique ID'),
-                        'ClientTransactionID'       : fields.Integer(1234, description='Client\'s transaction ID')
-                    })
-
-
 
 # ------------------
 # PropertyResponse
@@ -168,7 +129,7 @@ class MethodResponse(dict):
     def __init__(self, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
-        self.ClientTransactionIDForm = api.payload['ClientTransactionID']
+        self.ClientTransactionIDForm =  request.form.get('ClientTransactionID', 1)
         self.ServerTransactionID = svrtransid
         self.Method = request.method
         self.ErrorNumber = err.Number
@@ -200,7 +161,10 @@ class Action(Resource):
 
     @api.doc(description='Invokes the specified device-specific action.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_ActionValue)
+    @api.param('Action', 'A well known name that represents the action to be carried out.', type='string', required=True)
+    @api.param('Parameters', 'List of parameters or empty string if none are required.', type='string', default='', required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         global connected
         if (DeviceNumber != 0):
@@ -221,7 +185,12 @@ class CommandBlind(Resource):
     @api.doc(description='Transmits an arbitrary string to the device and does not wait for a response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission..')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_CommandValues)
+    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+    @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
+                      'if set to false then protocol framing characters may be added prior ' +
+                      'to transmission', type='boolean', default=False, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         global connected
         if (DeviceNumber != 0):
@@ -243,7 +212,12 @@ class CommandBool(Resource):
     @api.doc(description='Transmits an arbitrary string to the device and waits for a boolean response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission..')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_CommandValues)
+    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+    @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
+                      'if set to false then protocol framing characters may be added prior ' +
+                      'to transmission', type='boolean', default=False, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
@@ -264,7 +238,12 @@ class CommandString(Resource):
     @api.doc(description='Transmits an arbitrary string to the device and waits for a string response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission..')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_CommandValues)
+    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+    @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
+                      'if set to false then protocol framing characters may be added prior ' +
+                      'to transmission', type='boolean', default=False, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
@@ -284,8 +263,8 @@ class Connected(Resource):
 
     @api.doc(description='Retrieves the connected state of the Rotator.')
     @api.marshal_with(m_BoolResponse, description='Driver response')
-    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
-    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default=1)
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
@@ -296,15 +275,17 @@ class Connected(Resource):
 
     @api.doc(description='Sets the connected state of the Rotator.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_ConnectedValue)
+    @api.param('Connected', 'Set True to connect to the device hardware, set False to ' +
+                            'disconnect from the device hardware','formData', type='boolean', 
+                            default=False, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
-        devno = DeviceNumber                            # Whatever this might be used for
-        cid = api.payload['ClientID']                   # Ditto
-        print('> connecting')
-        _ROT.connected = api.payload['Connected']
-        print('< connected')
+        devno = DeviceNumber
+        cid = request.form.get('ClientID', 1234)
+        _ROT.connected = (request.form.get('Connected', 'false') == 'true')     # **TODO** Is this right???
         R = MethodResponse()
         return vars(R)
 
@@ -530,17 +511,20 @@ class Reverse(Resource):
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_ReverseValue)
+    @api.param('Reverse', 'True if the rotation and angular ' + 
+                          'direction must be reversed to match the optical ' +
+                          'characteristics', 'formData', type='boolean', default=False, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        global reverse
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
         if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                            # Whatever this might be used for
-        cid = api.payload['ClientID']                   # Ditto
-        _ROT.reverse = api.payload['Reverse']
+        devno = DeviceNumber
+        cid = request.form.get('ClientID', 1234)
+        _ROT.reverse = (request.form.get('Reverse', 'false') == 'true')     # **TODO** Is this right???
         R = MethodResponse()
         return vars(R)
 
@@ -610,15 +594,16 @@ class Halt(Resource):
 
     @api.doc(description='Immediately stop any Rotator motion due to a previous <b>Move()</b> or <b>MoveAbsolute()</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_NoValue)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                            # Whatever this might be used for
-        cid = api.payload['ClientID']                   # Ditto
+        devno = DeviceNumber
+        cid = request.form.get('ClientID', 1234)
         _ROT.Halt()
         R = MethodResponse()
         return vars(R)
@@ -638,7 +623,10 @@ class Move(Resource):
     
     @api.doc(description='Causes the rotator to move <b>Position</b> degrees relative to the current <b>Position</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_RelPosValue)
+    @api.param('Position', 'Angle to move in degrees relative to the current <b>Position</b>.', 
+                           'formData', type='float', default=0.0, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
@@ -648,9 +636,9 @@ class Move(Resource):
         if _ROT.is_moving:
             R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
             return vars(R)
-        _ROT.Move(position + float(api.payload['Position']))
-        devno = DeviceNumber                            # Whatever this might be used for
-        cid = api.payload['ClientID']                   # Ditto
+        _ROT.Move(_ROT.position + float(request.form.get('Position', 0.0)))
+        devno = DeviceNumber
+        cid = request.form.get('ClientID', 1234)
         R = MethodResponse()
         return vars(R)
 
@@ -668,7 +656,10 @@ class MoveAbsolute(Resource):
     
     @api.doc(description='Causes the rotator to move the absolute position of <b>Position</b> degrees.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.expect(m_AbsPosValue)
+    @api.param('Position', 'Destination mechanical angle to which the rotator will move (degrees).',
+                            'formData', type='float',  default=0.0, required=True)
+    @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
@@ -678,11 +669,9 @@ class MoveAbsolute(Resource):
         if _ROT.is_moving:
             R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
             return vars(R)
-        print('> dev.Move()')
-        _ROT.MoveAbsolute(float(api.payload['Position']))
-        print('< ret from dev.move()')
-        devno = DeviceNumber                            # Whatever this might be used for
-        cid = api.payload['ClientID']                   # Ditto
+        _ROT.MoveAbsolute(float(request.form.get('Position', 0.0)))
+        devno = DeviceNumber
+        cid = request.form.get('ClientID', 1234)
         R = MethodResponse()
         return vars(R)
 

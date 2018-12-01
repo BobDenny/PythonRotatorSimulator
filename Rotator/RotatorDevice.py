@@ -33,7 +33,6 @@ class RotatorDevice(object):
         self._timer = None
         self._interval = 1.0 / self._steps_per_sec
         self._stopped = True
-        ####self.start()                        # SELF STARTING
 
     def start(self, from_run=False):
         #print('[start] try to lock')
@@ -159,21 +158,21 @@ class RotatorDevice(object):
     # Methods
     #
     def Move(self, pos):
-        #self._lock.acquire()
+        self._lock.acquire()
         self._isMoving = True
         self._target_position = self._position + pos
         if self.target_position >= 360.0:
             self.target_position -= 360.0
         if self.target_position < 0.0:
             self.target_position += 360.0
-        #self._lock.release()
+        self._lock.release()
         self.start()
 
     def MoveAbsolute(self, pos):
-        #self._lock.acquire()   *TODO* WHY THIS LOCKED (TYP)
+        self._lock.acquire()
         self._is_moving = True
         self._target_position = pos
-        #self._lock.release()
+        self._lock.release()
         self.start()
 
     def Halt(self):
