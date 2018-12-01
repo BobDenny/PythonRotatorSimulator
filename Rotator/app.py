@@ -285,7 +285,7 @@ class Connected(Resource):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
-        _ROT.connected = (request.form.get('Connected', 'false') == 'true')     # **TODO** Is this right???
+        _ROT.connected = (request.form.get('Connected', 'false').lower() == 'true')     # **TODO** Is this right???
         R = MethodResponse()
         return vars(R)
 
@@ -452,7 +452,7 @@ class IsMoving(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        devno = DeviceNumber
         cid = request.args.get('ClientID', 1234)
         R = PropertyResponse(_ROT.is_moving)
         return vars(R)
@@ -524,7 +524,7 @@ class Reverse(Resource):
             return vars(R)
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
-        _ROT.reverse = (request.form.get('Reverse', 'false') == 'true')     # **TODO** Is this right???
+        _ROT.reverse = (request.form.get('Reverse', 'false').lower() == 'true')     # **TODO** Is this right???
         R = MethodResponse()
         return vars(R)
 
@@ -624,7 +624,7 @@ class Move(Resource):
     @api.doc(description='Causes the rotator to move <b>Position</b> degrees relative to the current <b>Position</b>.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.param('Position', 'Angle to move in degrees relative to the current <b>Position</b>.', 
-                           'formData', type='float', default=0.0, required=True)
+                           'formData', type='number', default = 0.0, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -657,7 +657,7 @@ class MoveAbsolute(Resource):
     @api.doc(description='Causes the rotator to move the absolute position of <b>Position</b> degrees.')
     @api.marshal_with(m_MethodResponse, description='Driver response')
     @api.param('Position', 'Destination mechanical angle to which the rotator will move (degrees).',
-                            'formData', type='float',  default=0.0, required=True)
+                            'formData', type='number',  default=0.0, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
