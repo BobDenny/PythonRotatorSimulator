@@ -28,7 +28,7 @@ class NotConnected(object):
 
 class NotImplemented(object):
     Number = 0x80040400
-    Message = 'Property of method not implemented'
+    Message = 'Property or method not implemented'
 
 class UnspecifiedError(object):
     Number = 0x800404FF

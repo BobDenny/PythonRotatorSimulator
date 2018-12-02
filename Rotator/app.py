@@ -52,6 +52,7 @@ app.register_blueprint(blueprint)
 # ==============
 # Rotator Device
 # =============
+# **TODO** Create 8 of these and allow 8 clients with different device ID!
 #
 _ROT = RotatorDevice.RotatorDevice()
 
@@ -83,7 +84,7 @@ class PropertyResponse(dict):
         self.Method = request.method
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
-        self.DriverException = None
+        self.DriverException = {}
 
 m_BoolResponse = api.model('BoolResponse', 
                     {   'Value'                     : fields.Boolean(description='True or False value.', required=True),
@@ -91,7 +92,8 @@ m_BoolResponse = api.model('BoolResponse',
                         'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
-                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                        'ErrorMessage'              : fields.String(description='Error message description from device.'),
+                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
                     })
 
 m_FloatResponse = api.model('FloatResponse', 
@@ -100,7 +102,8 @@ m_FloatResponse = api.model('FloatResponse',
                         'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
-                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                        'ErrorMessage'              : fields.String(description='Error message description from device.'),
+                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
                     })
 
 m_StringResponse = api.model('StringResponse', 
@@ -109,7 +112,8 @@ m_StringResponse = api.model('StringResponse',
                         'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
-                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                        'ErrorMessage'              : fields.String(description='Error message description from device.'),
+                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
                     })
 
 m_StringListResponse = api.model('StringListResponse', 
@@ -118,7 +122,8 @@ m_StringListResponse = api.model('StringListResponse',
                         'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
-                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                        'ErrorMessage'              : fields.String(description='Error message description from device.'),
+                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver.')
                     })
 
 # --------------
@@ -134,14 +139,15 @@ class MethodResponse(dict):
         self.Method = request.method
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
-        self.DriverException = None
+        self.DriverException = {}
 
 m_MethodResponse = api.model('MethodResponse', 
                     {   'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
                         'ServerTransactionID'       : fields.Integer(description='Server\'s transaction ID.'),
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
-                        'ErrorMessage'              : fields.String(description='Error message description from device.')
+                        'ErrorMessage'              : fields.String(description='Error message description from device.'),
+                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
                     })
 
 # ==============================
@@ -160,9 +166,9 @@ m_MethodResponse = api.model('MethodResponse',
 class Action(Resource):
 
     @api.doc(description='Invokes the specified device-specific action.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.param('Action', 'A well known name that represents the action to be carried out.', type='string', required=True)
-    @api.param('Parameters', 'List of parameters or empty string if none are required.', type='string', default='', required=True)
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
+    @api.param('Action', 'A well known name that represents the action to be carried out.', 'formData', type='string', required=True)
+    @api.param('Parameters', 'List of parameters or empty string if none are required.', 'formData', type='string', default='', required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -183,12 +189,12 @@ class Action(Resource):
 class CommandBlind(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and does not wait for a response. ' +
-                        'Optionally, protocol framing characters may be added to the string before transmission..')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+                        'Optionally, protocol framing characters may be added to the string before transmission.')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
+    @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
-                      'to transmission', type='boolean', default=False, required=True)
+                      'to transmission', 'formData', type='boolean', default=False, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -210,12 +216,12 @@ class CommandBlind(Resource):
 class CommandBool(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and waits for a boolean response. ' +
-                        'Optionally, protocol framing characters may be added to the string before transmission..')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+                        'Optionally, protocol framing characters may be added to the string before transmission.')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
+    @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
-                      'to transmission', type='boolean', default=False, required=True)
+                      'to transmission', 'formData', type='boolean', default=False, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -236,12 +242,12 @@ class CommandBool(Resource):
 class CommandString(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and waits for a string response. ' +
-                        'Optionally, protocol framing characters may be added to the string before transmission..')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
-    @api.param('Command', 'The literal command string to be transmitted.', type='string', required=True)
+                        'Optionally, protocol framing characters may be added to the string before transmission.')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
+    @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
-                      'to transmission', type='boolean', default=False, required=True)
+                      'to transmission', 'formData', type='boolean', default=False, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -262,7 +268,7 @@ class CommandString(Resource):
 class Connected(Resource):
 
     @api.doc(description='Retrieves the connected state of the Rotator.')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_BoolResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default=1)
     def get(self, DeviceNumber):
@@ -274,7 +280,7 @@ class Connected(Resource):
         return vars(R)
 
     @api.doc(description='Sets the connected state of the Rotator.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
     @api.param('Connected', 'Set True to connect to the device hardware, set False to ' +
                             'disconnect from the device hardware','formData', type='boolean', 
                             default=False, required=True)
@@ -300,7 +306,7 @@ class Connected(Resource):
 class Description(Resource):
 
     @api.doc(description='The description of the device itself.')
-    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -324,7 +330,7 @@ class Description(Resource):
 class DriverInfo(Resource):
 
     @api.doc(description='The description of the driver.')
-    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -348,7 +354,7 @@ class DriverInfo(Resource):
 class DriverInfo(Resource):
 
     @api.doc(description='A string containing only the major and minor version of the driver.')
-    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -371,7 +377,7 @@ class DriverInfo(Resource):
 class Name(Resource):
 
     @api.doc(description='The name of the device.')
-    @api.marshal_with(m_StringResponse, description='Driver response')
+    @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -417,7 +423,7 @@ class SupportedActions(Resource):
 class CanReverse(Resource):
 
     @api.doc(description='True if the Rotator supports the <b>Reverse</b> method.')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_BoolResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -443,7 +449,7 @@ class CanReverse(Resource):
 class IsMoving(Resource):
 
     @api.doc(description='True if the Rotator is currently moving to a new position. False if the Rotator is stationary.')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_BoolResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -469,7 +475,7 @@ class IsMoving(Resource):
 class Position(Resource):
 
     @api.doc(description='Current instantaneous Rotator mechanical angle (degrees).')
-    @api.marshal_with(m_FloatResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -495,7 +501,7 @@ class Position(Resource):
 class Reverse(Resource):
 
     @api.doc(description='Returns the Rotator\'s <b>Reverse</b> state.')
-    @api.marshal_with(m_BoolResponse, description='Driver response')
+    @api.marshal_with(m_BoolResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -510,7 +516,7 @@ class Reverse(Resource):
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
     @api.param('Reverse', 'True if the rotation and angular ' + 
                           'direction must be reversed to match the optical ' +
                           'characteristics', 'formData', type='boolean', default=False, required=True)
@@ -540,7 +546,7 @@ class Reverse(Resource):
 class StepSize(Resource):
 
     @api.doc(description='The minimum angular step size (degrees).')
-    @api.marshal_with(m_FloatResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -566,7 +572,7 @@ class StepSize(Resource):
 class TargetPosition(Resource):
 
     @api.doc(description='The destination mechanical angle for <b>Move()</b> and <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_FloatResponse, description='Driver response')
+    @api.marshal_with(m_FloatResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -593,7 +599,7 @@ class TargetPosition(Resource):
 class Halt(Resource):
 
     @api.doc(description='Immediately stop any Rotator motion due to a previous <b>Move()</b> or <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -622,7 +628,7 @@ class Move(Resource):
     
     
     @api.doc(description='Causes the rotator to move <b>Position</b> degrees relative to the current <b>Position</b>.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
     @api.param('Position', 'Angle to move in degrees relative to the current <b>Position</b>.', 
                            'formData', type='number', default = 0.0, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
@@ -655,7 +661,7 @@ class Move(Resource):
 class MoveAbsolute(Resource):
     
     @api.doc(description='Causes the rotator to move the absolute position of <b>Position</b> degrees.')
-    @api.marshal_with(m_MethodResponse, description='Driver response')
+    @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
     @api.param('Position', 'Destination mechanical angle to which the rotator will move (degrees).',
                             'formData', type='number',  default=0.0, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
