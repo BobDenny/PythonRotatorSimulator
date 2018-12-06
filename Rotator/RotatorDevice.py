@@ -172,6 +172,10 @@ class RotatorDevice(object):
         self._lock.acquire()
         self._is_moving = True
         self._target_position = pos
+        if self.target_position >= 360.0:
+            self.target_position -= 360.0
+        if self.target_position < 0.0:
+            self.target_position += 360.0
         self._lock.release()
         self.start()
 

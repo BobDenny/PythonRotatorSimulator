@@ -638,10 +638,10 @@ class Move(Resource):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
         if not _ROT.connected:
-            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
         if _ROT.is_moving:
-            R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
+            R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
         _ROT.Move(_ROT.position + float(request.form.get('Position', 0.0)))
         devno = DeviceNumber
@@ -671,12 +671,16 @@ class MoveAbsolute(Resource):
         if (DeviceNumber != 0):
             abort(400, 'No such DeviceNumber.')
         if not _ROT.connected:
-            R = PropertyResponse(None, ASCOMErrors.NotConnected)
+            R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
         if _ROT.is_moving:
-            R = PropertyResponse(None, ASCOMErrors.InvalidOperationException)
+            R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
-        _ROT.MoveAbsolute(float(request.form.get('Position', 0.0)))
+        newPos = float(request.form.get('Position', 0.0))
+        if newPos >= 360 or newPos < 0:
+            R = MethodResponse(ASCOMErrors.InvalidValue)
+            return vars(R)
+        _ROT.MoveAbsolute(newPos)
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
         R = MethodResponse()
