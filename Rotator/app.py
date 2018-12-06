@@ -73,6 +73,7 @@ m_ErrorMessage = api.model('ErrorMessage', {'Value' : fields.String(description=
 # Construct the response for a property-get. Common to all
 # of the properties in this driver. Models (see below) 
 # differ to specify data type and documentation of Value.
+# DO NOT SEND DriverException AT ALL!
 #
 class PropertyResponse(dict):
     def __init__(self, value, err = ASCOMErrors.Success):
@@ -84,7 +85,7 @@ class PropertyResponse(dict):
         self.Method = request.method
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
-        self.DriverException = {}
+        self.DriverException = None
 
 m_BoolResponse = api.model('BoolResponse', 
                     {   'Value'                     : fields.Boolean(description='True or False value.', required=True),
@@ -93,7 +94,7 @@ m_BoolResponse = api.model('BoolResponse',
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
                         'ErrorMessage'              : fields.String(description='Error message description from device.'),
-                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
+                        'DriverException'           : fields.Raw(Description='Windows automation exception, not applicable here')
                     })
 
 m_FloatResponse = api.model('FloatResponse', 
@@ -103,7 +104,7 @@ m_FloatResponse = api.model('FloatResponse',
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
                         'ErrorMessage'              : fields.String(description='Error message description from device.'),
-                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
+                        'DriverException'           : fields.Raw(Description='Windows automation exception, not applicable here')
                     })
 
 m_StringResponse = api.model('StringResponse', 
@@ -113,7 +114,7 @@ m_StringResponse = api.model('StringResponse',
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
                         'ErrorMessage'              : fields.String(description='Error message description from device.'),
-                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
+                        'DriverException'           : fields.Raw(Description='Windows automation exception, not applicable here')
                     })
 
 m_StringListResponse = api.model('StringListResponse', 
@@ -123,7 +124,7 @@ m_StringListResponse = api.model('StringListResponse',
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
                         'ErrorMessage'              : fields.String(description='Error message description from device.'),
-                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver.')
+                        'DriverException'           : fields.Raw(Description='Windows automation exception, not applicable here')
                     })
 
 # --------------
@@ -139,7 +140,7 @@ class MethodResponse(dict):
         self.Method = request.method
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
-        self.DriverException = {}
+        self.DriverException = None
 
 m_MethodResponse = api.model('MethodResponse', 
                     {   'ClientTransactionIDForm'   : fields.Integer(description='Client\'s transaction ID.'),
@@ -147,7 +148,7 @@ m_MethodResponse = api.model('MethodResponse',
                         'Method'                    : fields.String(description='Name of the calling method.'),
                         'ErrorNumber'               : fields.Integer(description='Error number from device.'),
                         'ErrorMessage'              : fields.String(description='Error message description from device.'),
-                        'DriverException'           : fields.Arbitrary(Description='Windows COM exception, always empty from this driver')
+                        'DriverException'           : fields.Raw(Description='Windows automation exception, not applicable here')
                     })
 
 # ==============================
@@ -161,7 +162,7 @@ m_MethodResponse = api.model('MethodResponse',
 #
 @api.route('/<int:DeviceNumber>/Action', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Action(Resource):
 
@@ -184,7 +185,7 @@ class Action(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandBlind', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandBlind(Resource):
 
@@ -211,7 +212,7 @@ class CommandBlind(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandBool', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandBool(Resource):
 
@@ -237,7 +238,7 @@ class CommandBool(Resource):
 #
 @api.route('/<int:DeviceNumber>/CommandString', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CommandString(Resource):
 
@@ -263,7 +264,7 @@ class CommandString(Resource):
 #
 @api.route('/<int:DeviceNumber>/Connected', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Connected(Resource):
 
@@ -291,7 +292,7 @@ class Connected(Resource):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
-        _ROT.connected = (request.form.get('Connected', 'false').lower() == 'true')     # **TODO** Is this right???
+        _ROT.connected = (request.form.get('Connected', 'false').lower() == 'true')     # **TODO** Is this right (typ) ???
         R = MethodResponse()
         return vars(R)
 
@@ -301,7 +302,7 @@ class Connected(Resource):
 #
 @api.route('/<int:DeviceNumber>/Description', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Description(Resource):
 
@@ -325,7 +326,7 @@ class Description(Resource):
 #
 @api.route('/<int:DeviceNumber>/DriverInfo', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class DriverInfo(Resource):
 
@@ -349,7 +350,7 @@ class DriverInfo(Resource):
 #
 @api.route('/<int:DeviceNumber>/DriverVersion', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class DriverInfo(Resource):
 
@@ -372,7 +373,7 @@ class DriverInfo(Resource):
 #
 @api.route('/<int:DeviceNumber>/Name', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Name(Resource):
 
@@ -395,7 +396,7 @@ class Name(Resource):
 #
 @api.route('/<int:DeviceNumber>/SupportedActions', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class SupportedActions(Resource):
 
@@ -418,7 +419,7 @@ class SupportedActions(Resource):
 #
 @api.route('/<int:DeviceNumber>/CanReverse', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class CanReverse(Resource):
 
@@ -444,7 +445,7 @@ class CanReverse(Resource):
 #
 @api.route('/<int:DeviceNumber>/IsMoving', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class IsMoving(Resource):
 
@@ -470,7 +471,7 @@ class IsMoving(Resource):
 #
 @api.route('/<int:DeviceNumber>/Position', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Position(Resource):
 
@@ -496,7 +497,7 @@ class Position(Resource):
 #
 @api.route('/<int:DeviceNumber>/Reverse', methods=['GET','PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Reverse(Resource):
 
@@ -541,7 +542,7 @@ class Reverse(Resource):
 #
 @api.route('/<int:DeviceNumber>/StepSize', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class StepSize(Resource):
 
@@ -567,7 +568,7 @@ class StepSize(Resource):
 #
 @api.route('/<int:DeviceNumber>/TargetPosition', methods=['GET']) 
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class TargetPosition(Resource):
 
@@ -594,7 +595,7 @@ class TargetPosition(Resource):
 
 @api.route('/<int:DeviceNumber>/Halt', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Halt(Resource):
 
@@ -622,7 +623,7 @@ class Halt(Resource):
 
 @api.route('/<int:DeviceNumber>/Move', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Move(Resource):
     
@@ -656,7 +657,7 @@ class Move(Resource):
 
 @api.route('/<int:DeviceNumber>/MoveAbsolute', methods=['PUT'])
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
-@api.response(400, 'DeviceNumber, command, or parameter velues, are missing or invalid', m_ErrorMessage)
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class MoveAbsolute(Resource):
     
