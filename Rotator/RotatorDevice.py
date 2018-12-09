@@ -161,10 +161,10 @@ class RotatorDevice(object):
         self._lock.acquire()
         self._isMoving = True
         self._target_position = self._position + pos
-        if self.target_position >= 360.0:
-            self.target_position -= 360.0
-        if self.target_position < 0.0:
-            self.target_position += 360.0
+        if self._target_position >= 360.0:              # Caller should protecxt against this (typ.)
+            self._target_position -= 360.0
+        if self._target_position < 0.0:
+            self._target_position += 360.0
         self._lock.release()
         self.start()
 
@@ -172,10 +172,10 @@ class RotatorDevice(object):
         self._lock.acquire()
         self._is_moving = True
         self._target_position = pos
-        if self.target_position >= 360.0:
-            self.target_position -= 360.0
-        if self.target_position < 0.0:
-            self.target_position += 360.0
+        if self._target_position >= 360.0:
+            self._target_position -= 360.0
+        if self._target_position < 0.0:
+            self._target_position += 360.0
         self._lock.release()
         self.start()
 
