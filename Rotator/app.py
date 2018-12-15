@@ -31,6 +31,10 @@ class CIFlask(Flask):
 #app = Flask(__name__)
 app = CIFlask(__name__)             # Case independent Flask (wow)
 
+import logging
+log = logging.getLogger('werkzeug')
+log.setLevel(logging.ERROR)
+
 blueprint = Blueprint('Rotator', __name__, 
                       url_prefix='/API/V1/Rotator',
                       static_folder='static')
@@ -352,7 +356,7 @@ class DriverInfo(Resource):
 @api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
 @api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
-class DriverInfo(Resource):
+class DriverVersion(Resource):
 
     @api.doc(description='A string containing only the major and minor version of the driver.')
     @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
@@ -364,6 +368,29 @@ class DriverInfo(Resource):
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
         R = PropertyResponse('0.1')
+        return vars(R)
+
+
+# ----------------
+# InterfaceVersion
+# ----------------
+#
+@api.route('/<int:DeviceNumber>/InterfaceVersion', methods=['GET']) 
+@api.param('DeviceNumber', 'Zero-based device number as set on the server', 'path', type='integer', default='0')
+@api.response(400, 'DeviceNumber, command, or parameter values, are missing or invalid', m_ErrorMessage)
+@api.response(500, 'Server internal error, check error message', m_ErrorMessage)
+class InterfaceVersion(Resource):
+
+    @api.doc(description='The interface version number that this device supports. Should return 2 for this interface version.')
+    @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
+    @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
+    @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
+    def get(self, DeviceNumber):
+        if (DeviceNumber != 0):
+            abort(400, 'No such DeviceNumber.')
+        devno = DeviceNumber                    # Used later for multi-device (typ.)
+        cid = request.args.get('ClientID', 1234)
+        R = PropertyResponse(2)
         return vars(R)
 
 
@@ -643,7 +670,11 @@ class Move(Resource):
         if _ROT.is_moving:
             R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
-        _ROT.Move(_ROT.position + float(request.form.get('Position', 0.0)))
+        relPos = float(request.form.get('Position', 0.0))
+        if relPos >= 360 or relPos <= -360.0:
+            R = MethodResponse(ASCOMErrors.InvalidValue)
+            return vars(R)
+        _ROT.Move(relPos)
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
         R = MethodResponse()
@@ -652,7 +683,7 @@ class Move(Resource):
 
 # ------------
 # MoveAbsolute
-# -------------
+# ------------
 #
 
 @api.route('/<int:DeviceNumber>/MoveAbsolute', methods=['PUT'])

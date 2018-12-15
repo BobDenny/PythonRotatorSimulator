@@ -86,9 +86,12 @@ class RotatorDevice(object):
 
     def stop(self):
         self._lock.acquire()
+        print('[stop] Stopping...')
         self._stopped = True
         self._is_moving = False
-        self._timer.cancel()
+        if self._timer != None:
+            self._timer.cancel()
+        self._timer = None
         self._lock.release()
 
     #
@@ -125,6 +128,7 @@ class RotatorDevice(object):
     def position(self):
         self._lock.acquire()
         res = self._position
+        print('[position] ' + str(res))
         self._lock.release()
         return res
 
@@ -132,6 +136,7 @@ class RotatorDevice(object):
     def target_position(self):
         self._lock.acquire()
         res =  self._target_position
+        print('[target_position] ' + str(res))
         self._lock.release()
         return res
 
@@ -139,6 +144,7 @@ class RotatorDevice(object):
     def is_moving(self):
         self._lock.acquire()
         res =  self._is_moving
+        print('[is_moving] ' + str(res))
         self._lock.release()
         return res
 
@@ -159,17 +165,20 @@ class RotatorDevice(object):
     #
     def Move(self, pos):
         self._lock.acquire()
-        self._isMoving = True
+        print('[Move] pos=' + str(pos) + ' cur=' + str(self._position))
+        self._is_moving = True
         self._target_position = self._position + pos
         if self._target_position >= 360.0:              # Caller should protecxt against this (typ.)
             self._target_position -= 360.0
         if self._target_position < 0.0:
             self._target_position += 360.0
+        print('       targetpos=' + str(self._target_position))
         self._lock.release()
         self.start()
 
     def MoveAbsolute(self, pos):
         self._lock.acquire()
+        print('[MoveAbs] pos=' + str(pos) + ' cur=' + str(self._position))
         self._is_moving = True
         self._target_position = pos
         if self._target_position >= 360.0:
