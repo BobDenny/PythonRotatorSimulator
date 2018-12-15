@@ -7,7 +7,7 @@ from flask_restplus import Api, Resource, fields
 import ASCOMErrors
 import RotatorDevice
 
-# Make routing caseless
+# Make routing caseless per the ASCOM Alpaca spec (despite admonitions above)
 # http://librelist.com/browser/flask/2011/6/24/case-insensitive-routing/#198dd20c7198760b3e2f5d5ada19b7f9
 import re
 from werkzeug.routing import Rule, RequestRedirect
@@ -20,9 +20,6 @@ class CIRule(Rule):
 
 class CIFlask(Flask):
     url_rule_class = CIRule
-
-
-# *TODO* Implement error on changing Reverse while moving
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -40,17 +37,17 @@ blueprint = Blueprint('Rotator', __name__,
                       static_folder='static')
 # Create a URL prefix for the whole application
 api = Api(default='Rotator', 
-            default_label='<h2>ASCOM REST V1 for Rotator Devices: Base URL = <tt>/API/V1/Rotator',
+            default_label='<h2>ASCOM Alpaca API for Rotator Devices: Base URL = <tt>/API/V1/Rotator',
             contact='Bob Denny, DC-3 Dreams, SP',
             contact_email='rdenny@dc3.com',
-            version='1.0.0-oas3')
+            version='Exp. 1.0')
 
 api.init_app(blueprint, 
             version = '1.0',
             title='ASCOM Rotator Simulator', 
             description='<h2><img src=\'static/Bug72T.jpg\' align=\'right\' width=\'72\' ' + 
                 'height=\'84\' />This device is an ASCOM Rotator simulator that responds to ' +
-                'the standard REST API for Rotator</h2>')
+                'the standard ASCOM Alpaca API for Rotator</h2>')
 app.register_blueprint(blueprint)
 
 # ==============
@@ -158,7 +155,6 @@ m_MethodResponse = api.model('MethodResponse',
 # ==============================
 # API ENDPOINTS (REST Resources)
 # ==============================
-
 
 # ------
 # Action
@@ -556,6 +552,9 @@ class Reverse(Resource):
         if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
+        if _ROT.is_moving:
+            R = MethodResponse(ASCOMErrors.InvalidOperationException)
+            return vars(R)
         devno = DeviceNumber
         cid = request.form.get('ClientID', 1234)
         _ROT.reverse = (request.form.get('Reverse', 'false').lower() == 'true')     # **TODO** Is this right???
@@ -727,11 +726,11 @@ class MoveAbsolute(Resource):
 #
 if __name__ == '__main__':
 
-    #HOST = os.environ.get('SERVER_HOST', 'localhost')
-
-    #try:
-    #    PORT = int(os.environ.get('SERVER_PORT', '5555'))
-    #except ValueError:
-    #    PORT = 5555
-    #app.run(HOST, PORT, debug=True)
-    app.run('127.0.0.1', 5555)
+    if os.name == 'nt':             # This is really Windows (my dev system eh?)
+        HOST = '127.0.0.1'
+        print(' * Running on Windows... 127.0.0.1')
+    else:
+        HOST = '192.168.0.40'       # Unbelievable what you need to do to get your live IP address on Linux (which one????)
+        print(' * Assuming run on Raspberry Pi Linux 192.168.0.40')
+    PORT = 5555
+    app.run(HOST, PORT)
