@@ -286,9 +286,9 @@ class Connected(Resource):
 
     @api.doc(description='Sets the connected state of the Rotator.')
     @api.marshal_with(m_MethodResponse, description='Transaction complete or exception')
-    @api.param('Connected', 'Set True to connect to the device hardware, set False to ' +
-                            'disconnect from the device hardware','formData', type='boolean', 
-                            default=False, required=True)
+    @api.param('Connected', 'Set True to connect to the device hardware. Set False to ' +
+                            'disconnect from the device hardware.',
+                            'formData', type='boolean', default=False, required=True)
     @api.param('ClientID', 'Client\'s unique ID', 'formData', type='integer', default=1234)
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
@@ -310,7 +310,7 @@ class Connected(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Description(Resource):
 
-    @api.doc(description='The description of the device itself.')
+    @api.doc(description='Returns a description of the device, such as manufacturer and modelnumber. Any ASCII characters may be used.')
     @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
@@ -334,7 +334,7 @@ class Description(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class DriverInfo(Resource):
 
-    @api.doc(description='The description of the driver.')
+    @api.doc(description='Descriptive and version information about this ASCOM driver.')
     @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
@@ -343,7 +343,7 @@ class DriverInfo(Resource):
             abort(400, 'No such DeviceNumber.')
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get('ClientID', 1234)
-        desc = 'ASCOM REST driver for a simulated Rotator.'
+        desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V0.1 (Python)'
         R = PropertyResponse(desc)
         return vars(R)
 
@@ -404,7 +404,7 @@ class InterfaceVersion(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class Name(Resource):
 
-    @api.doc(description='The name of the device.')
+    @api.doc(description='The short name of the driver, for display purposes.')
     @api.marshal_with(m_StringResponse, description='Transaction complete or exception')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
@@ -427,7 +427,7 @@ class Name(Resource):
 @api.response(500, 'Server internal error, check error message', m_ErrorMessage)
 class SupportedActions(Resource):
 
-    @api.doc(description='The name of the device.')
+    @api.doc(description='Returns the list of action names supported by this driver.')
     @api.marshal_with(m_StringListResponse, description='List of supported <b>Action()</b> commands.')
     @api.param('ClientID', 'Client\'s unique ID', 'query', type='integer', default='1234')
     @api.param('ClientTransactionID', 'Client\'s transaction ID', 'query', type='integer', default='1')
