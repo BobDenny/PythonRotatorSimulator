@@ -1,19 +1,23 @@
 # =================================================================================================
 # ASCOM Alpaca Rotator Simulator - Alpaca Interface Module & Main Program
 #
-# Written By:   Robert B. Denny <rdenny@dce.com>
+# Written By:   Robert B. Denny <rdenny@dc3.com>
 #
 # 24-Nov-2018   rbd Initial edit
 # 08-Dec-2018   rbd Changes per Alpaca finalization, complete Conform test on Raspberry Pi
 # 09-Mar-2019   rbd Refactor strings, add max/min values to models, 12-bit errors, cosmetics 
 #                   on Swagger UI
+# 10-Mar-2019   rbd Version now 0.2. Hide the X-Fields mechanism from Swagger, not used here.
+#                   Start the Swagger already showing the list. Looking good now. Passed
+#                   Conform via ASCOM Remote. Other cosmetics.
 # =================================================================================================
 
 # https://ascom-standards.org/api
-# https://exploreflask.com/en/latest/views.html#url-converters
+# http://flask.pocoo.org/docs/1.0/
+# https://flask-restplus.readthedocs.io/en/stable/index.html
 
 import os
-from flask import Flask, Blueprint, request, abort
+from flask import Flask, Blueprint, request, abort, make_response
 from flask_restplus import Api, Resource, fields
 
 import ASCOMErrors
@@ -22,12 +26,14 @@ import RotatorDevice
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
 # ===============================
-#
+
 app = Flask(__name__)
+app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
+app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so hide this from Swagger
 
 import logging
 log = logging.getLogger('werkzeug')
-log.setLevel(logging.ERROR)
+log.setLevel(logging.ERROR)                         # Prevent successful HTTP traffic from being logged
 
 blueprint = Blueprint('Rotator', __name__, 
                       url_prefix='/api/v1/rotator',
@@ -52,17 +58,26 @@ api.init_app(blueprint,
 
 app.register_blueprint(blueprint)
 
-# ==============
+# --------------
 # Rotator Device
-# =============
+# --------------
 # **TODO** Create 8 of these and allow 8 clients with different device ID!
 #
 _ROT = RotatorDevice.RotatorDevice()
 
 #
-# Connection
+# Connection state - server transaction ID
 #
-svrtransid = 0                                           # Counts up
+svrtransid = 0                                          # Counts up
+
+# --------------
+# Driver Version
+# --------------
+m_DriverVersion = '0.2'                                 # Major.Minor only
+
+# ------------------------------
+# Common strings used throughout
+# ------------------------------
 
 #
 # Common/shared field name strings
@@ -355,7 +370,7 @@ class driverinfo(Resource):
             abort(400, m_Resp400NoDevNo)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get(m_FldClId, 1234)
-        desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V0.1 (Python)'
+        desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V' + m_DriverVersion + ' (Python)'
         R = PropertyResponse(desc)
         return vars(R)
 
@@ -379,7 +394,7 @@ class driverversion(Resource):
             abort(400, m_Resp400NoDevNo)
         devno = DeviceNumber                    # Used later for multi-device (typ.)
         cid = request.args.get(m_FldClId, 1234)
-        R = PropertyResponse('0.1')
+        R = PropertyResponse(m_DriverVersion)
         return vars(R)
 
 

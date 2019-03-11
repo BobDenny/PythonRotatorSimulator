@@ -37,9 +37,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="requirements.txt" />
-    <Content Include="static\ASCOM-Logo.jpg">
-      <Publish>True</Publish>
-    </Content>
+    <Content Include="static\AlpacaLogo128.png" />
+    <Content Include="static\favicon.ico" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
