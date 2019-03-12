@@ -10,6 +10,9 @@
 # 10-Mar-2019   rbd Version now 0.2. Hide the X-Fields mechanism from Swagger, not used here.
 #                   Start the Swagger already showing the list. Looking good now. Passed
 #                   Conform via ASCOM Remote. Other cosmetics.
+# 12-Mar-2019   rbd Version 0.3 Make all query string and PUT/form data item retrieval 
+#                   have case-insensitive names. Remove repeated dead code except in Connected as
+#                   examples. 
 # =================================================================================================
 
 # https://ascom-standards.org/api
@@ -22,6 +25,11 @@ from flask_restplus import Api, Resource, fields
 
 import ASCOMErrors
 import RotatorDevice
+
+# --------------
+# Driver Version
+# --------------
+m_DriverVersion = '0.3'                                 # Major.Minor only
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -70,10 +78,27 @@ _ROT = RotatorDevice.RotatorDevice()
 #
 svrtransid = 0                                          # Counts up
 
-# --------------
-# Driver Version
-# --------------
-m_DriverVersion = '0.2'                                 # Major.Minor only
+#
+# Get query string data with case-insensitive name
+#
+def get_args_caseless(name, default):
+    lcName = name.lower()
+    a = request.args                                    # Why does this work (no need for list(request.args.keys()))? (typ.)
+    for an in a:
+        if an.lower() == lcName:
+            return a.get(an, default)
+    return name                                         # not in form, let caller punt
+
+#
+# Get form data with case-insensitive name
+#
+def get_form_caseless(name, default):
+    lcName = name.lower()
+    f = request.form
+    for fn in f:
+        if fn.lower() == lcName:
+            return f.get(fn, default)
+    return name                                         # not in form, let caller punt
 
 # ------------------------------
 # Common strings used throughout
@@ -126,7 +151,7 @@ class PropertyResponse(dict):
         global svrtransid
         svrtransid += 1
         self.Value = value
-        self.ClientTransactionID = request.args.get(m_FldCtId, 1)
+        self.ClientTransactionID = get_args_caseless(m_FldCtId, 1)
         self.ServerTransactionID = svrtransid
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
@@ -171,7 +196,7 @@ class MethodResponse(dict):
     def __init__(self, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
-        self.ClientTransactionID =  request.form.get(m_FldCtId, 1)
+        self.ClientTransactionID =  get_form_caseless(m_FldCtId, 1)
         self.ServerTransactionID = svrtransid
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
@@ -186,6 +211,9 @@ m_MethodResponse = api.model('MethodResponse',
 # ==============================
 # API ENDPOINTS (REST Resources)
 # ==============================
+
+# Note the additonal items retrieved from the request in Connected (typ.)
+
 
 # ------
 # Action
@@ -306,8 +334,8 @@ class connected(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber
-        cid = request.args.get(m_FldClId, 1234)
+        devno = DeviceNumber                        # Used later for multi-device (typ.)
+        cid = get_args_caseless(m_FldClId, 1234)    # Used if need to ident the Client (typ.)
         R = PropertyResponse(_ROT.connected)
         return vars(R)
 
@@ -322,8 +350,8 @@ class connected(Resource):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
         devno = DeviceNumber
-        cid = request.form.get(m_FldClId, 1234)
-        _ROT.connected = (request.form.get('Connected', 'false').lower() == 'true')     # **TODO** Is this right (typ) ???
+        cid = get_form_caseless(m_FldClId, 1234)
+        _ROT.connected = (get_form_caseless('Connected', 'false').lower() == 'true')
         R = MethodResponse()
         return vars(R)
 
@@ -344,8 +372,6 @@ class description(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         desc = 'Simulated Rotator implemented in Python.'
         R = PropertyResponse(desc)
         return vars(R)
@@ -368,8 +394,6 @@ class driverinfo(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V' + m_DriverVersion + ' (Python)'
         R = PropertyResponse(desc)
         return vars(R)
@@ -392,8 +416,6 @@ class driverversion(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(m_DriverVersion)
         return vars(R)
 
@@ -415,8 +437,6 @@ class interfaceversion(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(2)
         return vars(R)
 
@@ -438,8 +458,6 @@ class name(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse('Rotator Simulator')
         return vars(R)
 
@@ -461,8 +479,6 @@ class supportedactions(Resource):
     def get(self, DeviceNumber):
         if (DeviceNumber != 0):
             abort(400, m_Resp400NoDevNo)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse([])
         return vars(R)
 
@@ -487,8 +503,6 @@ class canreverse(Resource):
         if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.can_reverse)
         return vars(R)
 
@@ -513,8 +527,6 @@ class ismoving(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.is_moving)
         return vars(R)
 
@@ -539,8 +551,6 @@ class position(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.position)
         return vars(R)
 
@@ -565,8 +575,6 @@ class reverse(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.reverse)
         return vars(R)
 
@@ -586,9 +594,7 @@ class reverse(Resource):
         if _ROT.is_moving:
             R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
-        devno = DeviceNumber
-        cid = request.form.get(m_FldClId, 1234)
-        _ROT.reverse = (request.form.get('Reverse', 'false').lower() == 'true')     # **TODO** Is this right???
+        _ROT.reverse = (get_form_caseless('Reverse', 'false').lower() == 'true')     # **TODO** Is this right???
         R = MethodResponse()
         return vars(R)
 
@@ -613,8 +619,6 @@ class stepsize(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.step_size)
         return vars(R)
 
@@ -639,8 +643,6 @@ class targetposition(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber                    # Used later for multi-device (typ.)
-        cid = request.args.get(m_FldClId, 1234)
         R = PropertyResponse(_ROT.target_position)
         return vars(R)
 
@@ -666,8 +668,6 @@ class halt(Resource):
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
-        devno = DeviceNumber
-        cid = request.form.get(m_FldClId, 1234)
         _ROT.Halt()
         R = MethodResponse()
         return vars(R)
@@ -700,13 +700,11 @@ class move(Resource):
         if _ROT.is_moving:
             R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
-        relPos = float(request.form.get('Position', 0.0))
+        relPos = float(get_form_caseless('Position', 0.0))
         if relPos >= 360 or relPos <= -360.0:
             R = MethodResponse(ASCOMErrors.InvalidValue)
             return vars(R)
         _ROT.Move(relPos)
-        devno = DeviceNumber
-        cid = request.form.get(m_FldClId, 1234)
         R = MethodResponse()
         return vars(R)
 
@@ -737,13 +735,11 @@ class moveabsolute(Resource):
         if _ROT.is_moving:
             R = MethodResponse(ASCOMErrors.InvalidOperationException)
             return vars(R)
-        newPos = float(request.form.get('Position', 0.0))
+        newPos = float(get_form_caseless('Position', 0.0))
         if newPos >= 360 or newPos < 0:
             R = MethodResponse(ASCOMErrors.InvalidValue)
             return vars(R)
         _ROT.MoveAbsolute(newPos)
-        devno = DeviceNumber
-        cid = request.form.get(m_FldClId, 1234)
         R = MethodResponse()
         return vars(R)
 
