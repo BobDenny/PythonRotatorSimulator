@@ -1,22 +1,22 @@
 ASCOM Alpaca Rotator Simulator in Python
 ----------------------------------------
 
-Version: 0.2 (10-Mar-2019)
+Version: 0.3 (12-Mar-2019 - caseless field and query string names)
 By: Bob Denny <rdenny@dc3.com>
 
-This ASCOM Alpaca Standard Rotator simulator will run on Python 3 (and maybe Python 2 as well). 
+This ASCOM Alpaca Standard Rotator simulator will run on Python 3.6 or later (and probably some earlier Python 3s and probably on Python 2.7 as well). 
 
 Installation and Test
 ---------------------
 
-(1) PRE-REQUISITES - The file requirements.txt lists the required Python packages and their versions. If you are on Windows and are using Visual Studio 2017 with Python support, requirements.txt is enough to have VS2017 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. The objective, though, is to have this Alpaca Rotator run on a Raspberry Pi or other lightweight platform that supports Python 3. 
+(1) PRE-REQUISITES - The file requirements.txt lists the required Python packages and their versions. If you are on Windows and are using Visual Studio 2017 with Python support, requirements.txt is enough to have VS2017 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. The objective, though, is to have this Alpaca Rotator run on a Raspberry Pi or other lightweight platform that supports Python 3 or if you must try Python 2.7.
 
 So on the target device, use PIP (or whatever) to install the packages listed in requirements.txt. Some of them are dependencies so you may only need to install
 
 * Flask
-* flask-restplus
+* Flask-RESTPlus
 
-After doing these, look and see what else you might need to complete the packages in requirements.txt. Note that the file requirements.txt is not needed in production.
+After doing these, look and see what else you might need to complete the packages in requirements.txt. Note that the file requirements.txt is not needed in production. It can be  used in Visual Studio 2.07 with Python to create a nice virtual environment with the required packages.
 
 (2) Create the Python application in a folder: Create a folder (e.g.) Rotator. Then copy the contents of the ZIP file (except requirements.txt and README.txt) into that folder. You should end up with 
 
@@ -30,8 +30,9 @@ Rotator
 
 (3) Edit app.py. Scroll to the bottom and change the IP address 192.168.0.40 to whatever IP address your lightweight device (Raspberry Pi or whatever) is on. Maybe you'll want to change the port 5555 to something else. 
 
+(4) If needed open the firewall on your system to accept inbound connections on port 5555
 
-(4) Now start it:
+(5) Now start the simulator:
 
 cd wherever/Rotator
 python3 app.py
@@ -45,7 +46,7 @@ This should result in something like
    Use a production WSGI server instead.
  * Debug mode: off 
  
- (5) If you get this far without errors (missing Python dependencies, old versions of Python 3, etc.) you are ready to play with the simulator. Open a web browser and navigate to the Alpaca rotator root which is the Swagger documentation that is served by your Rotator Simulator:
+ (6) If you get this far without errors (missing Python dependencies, old versions of Python 3, etc.) you are ready to play with the simulator. Open a web browser and navigate to the Alpaca rotator root which is the Swagger documentation that is served by your Rotator Simulator:
  
      http://192.168.0.40:5555/api/v1/rotator
 	 
@@ -61,5 +62,5 @@ PLEASE NOTE
 -----------
 I'm no Linux expert, no Python expert, and no Flask expert. This whole project was one big "just in time learning" exercise. What I know is that it is easy to get the Python packages into a screwed up state, mix up Python 2 vs 3, and other issues. If your installation can support "virtual environments" then that's good. Use requirements.txt as a guide. I had no problems at all, but I have run into problems in the past on other projects with package versions and dependencies. Your chances of success are very high though. What I cannot do is help you solve problems with the Python stuff, nor Linux things like directory permissions, paths, strange ENVVAR side-effects, etc. Under the right conditions this rotator simulator will work. 
 
-  Bob Denny - 10-Mar-2019
+  Bob Denny - 12-Mar-2019
   
