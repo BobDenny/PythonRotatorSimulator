@@ -1,6 +1,11 @@
 # =================================================================================================
 # ASCOM Alpaca Rotator Simulator - Alpaca Interface Module & Main Program
 #
+# PLEASE NOTE: This has purposely been kept simple as it is meant as a starting point. Most
+# importantly we don't use an Application Factory pattern here. The only modules apart from this 
+# plump little app.py are one that contains constant definitions for the ASCOM error codes, 
+# and one that contains the "machinery" of the simulated rotator. You take it from here!
+#
 # Written By:   Robert B. Denny <rdenny@dc3.com>
 #
 # 24-Nov-2018   rbd Initial edit
@@ -13,29 +18,52 @@
 # 12-Mar-2019   rbd Version 0.3 Make all query string and PUT/form data item retrieval 
 #                   have case-insensitive names. Remove repeated dead code except in Connected as
 #                   examples. 
+# 13-Mar-2019   rbd Version 0.4 Make the parameters such as ClientTransactionId optional, and 
+#                   prevent them from showing in response as null if completely missing.
+# 14-Mar-2019   rbd Version 0.5 Tidying. Not going with PEP-8 here. s_ are strings, m_ are models.
+# 15-Mar-2019   rbd Version 0.5 (cont) Always return ClientID and ClientTransactionID even if not
+#                   in the request, and in that case return 0.
+# 17-Mar-2019   rbd Version 0.5 (cont) actually 2 days with the setup form, getting it 'right'
 # =================================================================================================
 
+#
 # https://ascom-standards.org/api
 # http://flask.pocoo.org/docs/1.0/
 # https://flask-restplus.readthedocs.io/en/stable/index.html
+#
+# Strongly recommended Flask training, free, concise, and easy to understand.
+# See the Building Flask Apps table of contents right under the main graphic.
+# https://hackersandslackers.com/creating-your-first-flask-application/
+# Note particularly 
+#       https://hackersandslackers.com/serving-static-assets-in-flask/
+#       https://hackersandslackers.com/guide-to-building-forms-in-flask
+# And there's always Miguel Grinberg:
+#       https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
+#
+# Also you should be aware of this 'awesome' resource (haha)
+# https://github.com/humiaozuzu/awesome-flask
+#
 
 import os
-from flask import Flask, Blueprint, request, abort, make_response
+from flask import Flask, Blueprint, request, abort, make_response, render_template, flash
 from flask_restplus import Api, Resource, fields
 
 import ASCOMErrors
 import RotatorDevice
+from forms import SetupForm
 
 # --------------
 # Driver Version
 # --------------
-m_DriverVersion = '0.3'                                 # Major.Minor only
+m_DriverVersion = '0.5'                                 # Major.Minor only
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
 # ===============================
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
+# needed for session (flash queue uses this), CSRF protection
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'we-did-it-for-harambe'
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
 app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so hide this from Swagger
 
@@ -43,10 +71,17 @@ import logging
 log = logging.getLogger('werkzeug')
 log.setLevel(logging.ERROR)                         # Prevent successful HTTP traffic from being logged
 
+#
+# Blueprint to create a URL prefix for the whole application
+#
 blueprint = Blueprint('Rotator', __name__, 
                       url_prefix='/api/v1/rotator',
                       static_folder='static')
-# Create a URL prefix for the whole application
+
+#
+# Set up the  Flask-RESTPlus api (root object) and use the above 
+# blueprint to establish the endpoint prefix.
+#
 api = Api(default='rotator', 
             default_label='<h2>ASCOM Alpaca API for Rotator Devices: Base URL = <tt>/api/v1/rotator',
             contact='Bob Denny, DC-3 Dreams, SP',
@@ -83,11 +118,11 @@ svrtransid = 0                                          # Counts up
 #
 def get_args_caseless(name, default):
     lcName = name.lower()
-    a = request.args                                    # Why does this work (no need for list(request.args.keys()))? (typ.)
+    a = request.args
     for an in a:
         if an.lower() == lcName:
             return a.get(an, default)
-    return name                                         # not in form, let caller punt
+    return None                                         # not in args, let caller punt
 
 #
 # Get form data with case-insensitive name
@@ -98,7 +133,7 @@ def get_form_caseless(name, default):
     for fn in f:
         if fn.lower() == lcName:
             return f.get(fn, default)
-    return name                                         # not in form, let caller punt
+    return None                                         # not in form, let caller punt
 
 # ------------------------------
 # Common strings used throughout
@@ -107,37 +142,37 @@ def get_form_caseless(name, default):
 #
 # Common/shared field name strings
 #
-m_FldDevNum =   'DeviceNumber'
-m_FldClId =     'ClientID'
-m_FldValue =    'Value'
-m_FldCtId =     'ClientTransactionID'
-m_FldStId =     'ServerTransactionID'
-m_FldErrNum =   'ErrorNumber'
-m_FldErrMsg =   'ErrorMessage'
+s_FldDevNum =   'DeviceNumber'
+s_FldClId =     'ClientID'
+s_FldValue =    'Value'
+s_FldCtId =     'ClientTransactionID'
+s_FldStId =     'ServerTransactionID'
+s_FldErrNum =   'ErrorNumber'
+s_FldErrMsg =   'ErrorMessage'
 
 #
 # Common/shared description strings
 #
-m_DescDevNum =  'Zero-based device number as set on the server'
-m_DescClId =    'Client\'s unique ID. The client should choose a random value at startup and send this value with every transaction.'
-m_DescCtId =    'Client\'s transaction ID as supplied by the client in the command request. The cleint should start this count at 1 and increment by 1 on each successive transaction.'
-m_DescStId =    'Server\'s transaction ID; should be unique for each client transaction so that log messages on the client can be associated with logs on the device.'
-m_DescErrNum =  'Zero for a successful transaction, or a 12-bit non-zero Alpaca error code if the device encountered an issue.'
-m_DescErrMsg =  'Empty string for a successful transaction, or a message describing the issue that was encountered.'
-m_DescMthRsp =  'Transaction complete or exception'
+s_DescDevNum =  'Zero-based device number as set on the server'
+s_DescClId =    'Client\'s unique ID. The client should choose a random value at startup and send this value with every transaction.'
+s_DescCtId =    'Client\'s transaction ID as supplied by the client in the command request. The cleint should start this count at 1 and increment by 1 on each successive transaction.'
+s_DescStId =    'Server\'s transaction ID; should be unique for each client transaction so that log messages on the client can be associated with logs on the device.'
+s_DescErrNum =  'Zero for a successful transaction, or a 12-bit non-zero Alpaca error code if the device encountered an issue.'
+s_DescErrMsg =  'Empty string for a successful transaction, or a message describing the issue that was encountered.'
+s_DescMthRsp =  'Transaction complete or exception'
 
 #
 # Common/shared response strings
 #
-m_Resp400Missing =  'DeviceNumber, command, or parameter values, are missing or invalid'
-m_Resp400NoDevNo =  'No such DeviceNumber'
-m_Resp500SrvErr =   'Server internal error, check error message'
+s_Resp400Missing =  'DeviceNumber, command, or parameter values, are missing or invalid'
+s_Resp400NoDevNo =  'No such DeviceNumber'
+s_Resp500SrvErr =   'Server internal error, check error message'
 
 # ==========================
 # Models and Wrapper Classes
 # ==========================
 
-m_ErrorMessage = api.model(m_FldErrMsg, {m_FldValue : fields.String(description=m_DescErrMsg, required=True)})
+m_ErrorMessage = api.model(s_FldErrMsg, {s_FldValue : fields.String(description=s_DescErrMsg, required=True)})
 
 # ------------------
 # PropertyResponse
@@ -145,47 +180,52 @@ m_ErrorMessage = api.model(m_FldErrMsg, {m_FldValue : fields.String(description=
 # Construct the response for a property-get. Common to all
 # of the properties in this driver. Models (see below) 
 # differ to specify data type and documentation of Value.
+# NOTE: the api.marshal_with(..., skip_none=True) stops missing fields from coming back with value null
 #
 class PropertyResponse(dict):
     def __init__(self, value, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
-        self.Value = value
-        self.ClientTransactionID = get_args_caseless(m_FldCtId, 1)
         self.ServerTransactionID = svrtransid
+        self.Value = value
+        ctid = get_args_caseless(s_FldCtId, 1)
+        if (not ctid is None):
+            self.ClientTransactionID = ctid
+        else:
+            self.ClientTransactionID = 0        # Per Alpaca, Return a 0 if ClientTransactionId is not in the request
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
 
 m_BoolResponse = api.model('BoolResponse', 
-                    {   m_FldValue      : fields.Boolean(description='True or False value.', required=True),
-                        m_FldCtId       : fields.Integer(min=0, max=4294967295, description=m_DescCtId),
-                        m_FldStId       : fields.Integer(min=0, max=4294967295, description=m_DescStId),
-                        m_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=m_DescErrNum),
-                        m_FldErrMsg     : fields.String(description=m_DescErrMsg)
+                    {   s_FldValue      : fields.Boolean(description='True or False value.', required=True),
+                        s_FldCtId       : fields.Integer(min=0, max=4294967295, description=s_DescCtId),
+                        s_FldStId       : fields.Integer(min=0, max=4294967295, description=s_DescStId),
+                        s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=s_DescErrNum),
+                        s_FldErrMsg     : fields.String(description=s_DescErrMsg)
                     })
 
 m_FloatResponse = api.model('FloatResponse', 
-                    {   m_FldValue      : fields.Float(description='Double value.', required=True),
-                        m_FldCtId       : fields.Integer(min=0, max=4294967295, description=m_DescCtId),
-                        m_FldStId       : fields.Integer(min=0, max=4294967295, description=m_DescStId),
-                        m_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=m_DescErrNum),
-                        m_FldErrMsg     : fields.String(description=m_DescErrMsg)
+                    {   s_FldValue      : fields.Float(description='Double value.', required=True),
+                        s_FldCtId       : fields.Integer(min=0, max=4294967295, description=s_DescCtId),
+                        s_FldStId       : fields.Integer(min=0, max=4294967295, description=s_DescStId),
+                        s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=s_DescErrNum),
+                        s_FldErrMsg     : fields.String(description=s_DescErrMsg)
                     })
 
 m_StringResponse = api.model('StringResponse', 
-                    {   m_FldValue      : fields.String(description='String value.', required=True),
-                        m_FldCtId       : fields.Integer(min=0, max=4294967295, description=m_DescCtId),
-                        m_FldStId       : fields.Integer(min=0, max=4294967295, description=m_DescStId),
-                        m_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=m_DescErrNum),
-                        m_FldErrMsg     : fields.String(description=m_DescErrMsg)
+                    {   s_FldValue      : fields.String(description='String value.', required=True),
+                        s_FldCtId       : fields.Integer(min=0, max=4294967295, description=s_DescCtId),
+                        s_FldStId       : fields.Integer(min=0, max=4294967295, description=s_DescStId),
+                        s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=s_DescErrNum),
+                        s_FldErrMsg     : fields.String(description=s_DescErrMsg)
                     })
 
 m_StringListResponse = api.model('StringListResponse', 
-                    {   m_FldValue      : fields.List(fields.String(), description='List of string values.', required=True),
-                        m_FldCtId       : fields.Integer(min=0, max=4294967295, description=m_DescCtId),
-                        m_FldStId       : fields.Integer(min=0, max=4294967295, description=m_DescStId),
-                        m_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=m_DescErrNum),
-                        m_FldErrMsg     : fields.String(description=m_DescErrMsg)
+                    {   s_FldValue      : fields.List(fields.String(), description='List of string values.', required=True),
+                        s_FldCtId       : fields.Integer(min=0, max=4294967295, description=s_DescCtId),
+                        s_FldStId       : fields.Integer(min=0, max=4294967295, description=s_DescStId),
+                        s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=s_DescErrNum),
+                        s_FldErrMsg     : fields.String(description=s_DescErrMsg)
                     })
 
 # --------------
@@ -196,16 +236,20 @@ class MethodResponse(dict):
     def __init__(self, err = ASCOMErrors.Success):
         global svrtransid
         svrtransid += 1
-        self.ClientTransactionID =  get_form_caseless(m_FldCtId, 1)
         self.ServerTransactionID = svrtransid
+        ctid = get_args_caseless(s_FldCtId, 1)
+        if (not ctid is None):
+            self.ClientTransactionID = ctid
+        else:
+            self.ClientTransactionID = 0        # Per Alpaca, Return a 0 if ClientTransactionId is not in the request
         self.ErrorNumber = err.Number
         self.ErrorMessage = err.Message
 
 m_MethodResponse = api.model('MethodResponse', 
-                    {   m_FldCtId       : fields.Integer(min=0, max=4294967295, description=m_DescCtId),
-                        m_FldStId       : fields.Integer(min=0, max=4294967295, description=m_DescStId),
-                        m_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=m_DescErrNum),
-                        m_FldErrMsg     : fields.String(description=m_DescErrMsg)
+                    {   s_FldCtId       : fields.Integer(min=0, max=4294967295, description=s_DescCtId),
+                        s_FldStId       : fields.Integer(min=0, max=4294967295, description=s_DescStId),
+                        s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=s_DescErrNum),
+                        s_FldErrMsg     : fields.String(description=s_DescErrMsg)
                     })
 
 # ==============================
@@ -214,27 +258,26 @@ m_MethodResponse = api.model('MethodResponse',
 
 # Note the additonal items retrieved from the request in Connected (typ.)
 
-
 # ------
 # Action
 # ------
 #
 @api.route('/<int:DeviceNumber>/action', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class action(Resource):
 
     @api.doc(description='Invokes the specified device-specific action.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Action', 'A well known name that represents the action to be carried out.', 'formData', type='string', required=True)
     @api.param('Parameters', 'List of parameters or empty string if none are required.', 'formData', type='string', default='', required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         global connected
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = MethodResponse(ASCOMErrors.NotImplemented)
         return vars(R)
 
@@ -243,24 +286,24 @@ class action(Resource):
 # ------------
 #
 @api.route('/<int:DeviceNumber>/commandblind', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class commandblind(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and does not wait for a response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
                       'to transmission', 'formData', type='boolean', default=False, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         global connected
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = MethodResponse(ASCOMErrors.NotImplemented)
         return vars(R)
 
@@ -270,23 +313,23 @@ class commandblind(Resource):
 # -----------
 #
 @api.route('/<int:DeviceNumber>/commandbool', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class commandbool(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and waits for a boolean response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
                       'to transmission', 'formData', type='boolean', default=False, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = MethodResponse(ASCOMErrors.NotImplemented)
         return vars(R)
 
@@ -296,23 +339,23 @@ class commandbool(Resource):
 # -------------
 #
 @api.route('/<int:DeviceNumber>/commandstring', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class commandstring(Resource):
 
     @api.doc(description='Transmits an arbitrary string to the device and waits for a string response. ' +
                         'Optionally, protocol framing characters may be added to the string before transmission.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Command', 'The literal command string to be transmitted.', 'formData', type='string', required=True)
     @api.param('Raw', 'If set to true the string is transmitted \'as-is\', ' +
                       'if set to false then protocol framing characters may be added prior ' +
                       'to transmission', 'formData', type='boolean', default=False, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = MethodResponse(ASCOMErrors.NotImplemented)
         return vars(R)
 
@@ -322,35 +365,35 @@ class commandstring(Resource):
 # ---------
 #
 @api.route('/<int:DeviceNumber>/connected', methods=['GET','PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class connected(Resource):
 
     @api.doc(description='Retrieves the connected state of the Rotator.')
-    @api.marshal_with(m_BoolResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default=1)
+    @api.marshal_with(m_BoolResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default=1)
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         devno = DeviceNumber                        # Used later for multi-device (typ.)
-        cid = get_args_caseless(m_FldClId, 1234)    # Used if need to ident the Client (typ.)
+        cid = get_args_caseless(s_FldClId, 1234)    # Used if need to ident the Client (typ.)
         R = PropertyResponse(_ROT.connected)
         return vars(R)
 
     @api.doc(description='Sets the connected state of the Rotator.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Connected', 'Set True to connect to the device hardware. Set False to ' +
                             'disconnect from the device hardware.',
                             'formData', type='boolean', default=False, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         devno = DeviceNumber
-        cid = get_form_caseless(m_FldClId, 1234)
+        cid = get_form_caseless(s_FldClId, 1234)
         _ROT.connected = (get_form_caseless('Connected', 'false').lower() == 'true')
         R = MethodResponse()
         return vars(R)
@@ -360,18 +403,18 @@ class connected(Resource):
 # -----------
 #
 @api.route('/<int:DeviceNumber>/description', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class description(Resource):
 
     @api.doc(description='Returns a description of the device, such as manufacturer and modelnumber. Any ASCII characters may be used.')
-    @api.marshal_with(m_StringResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         desc = 'Simulated Rotator implemented in Python.'
         R = PropertyResponse(desc)
         return vars(R)
@@ -382,18 +425,18 @@ class description(Resource):
 # ----------
 #
 @api.route('/<int:DeviceNumber>/driverinfo', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class driverinfo(Resource):
 
     @api.doc(description='Descriptive and version information about this ASCOM driver.')
-    @api.marshal_with(m_StringResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V' + m_DriverVersion + ' (Python)'
         R = PropertyResponse(desc)
         return vars(R)
@@ -404,18 +447,18 @@ class driverinfo(Resource):
 # -------------
 #
 @api.route('/<int:DeviceNumber>/driverversion', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class driverversion(Resource):
 
     @api.doc(description='A string containing only the major and minor version of the driver.')
-    @api.marshal_with(m_StringResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = PropertyResponse(m_DriverVersion)
         return vars(R)
 
@@ -425,18 +468,18 @@ class driverversion(Resource):
 # ----------------
 #
 @api.route('/<int:DeviceNumber>/interfaceversion', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class interfaceversion(Resource):
 
     @api.doc(description='The interface version number that this device supports. Should return 2 for this interface version.')
-    @api.marshal_with(m_StringResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = PropertyResponse(2)
         return vars(R)
 
@@ -446,18 +489,18 @@ class interfaceversion(Resource):
 # ----
 #
 @api.route('/<int:DeviceNumber>/name', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class name(Resource):
 
     @api.doc(description='The short name of the driver, for display purposes.')
-    @api.marshal_with(m_StringResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = PropertyResponse('Rotator Simulator')
         return vars(R)
 
@@ -467,18 +510,18 @@ class name(Resource):
 # ----------------
 #
 @api.route('/<int:DeviceNumber>/supportedactions', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class supportedactions(Resource):
 
     @api.doc(description='Returns the list of action names supported by this driver.')
-    @api.marshal_with(m_StringListResponse, description='List of supported <b>Action()</b> commands.')
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_StringListResponse, description='List of supported <b>Action()</b> commands.', skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         R = PropertyResponse([])
         return vars(R)
 
@@ -488,18 +531,18 @@ class supportedactions(Resource):
 # ----------
 #
 @api.route('/<int:DeviceNumber>/canreverse', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class canreverse(Resource):
 
     @api.doc(description='True if the Rotator supports the <b>Reverse</b> method.')
-    @api.marshal_with(m_BoolResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_BoolResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if (not _ROT.connected):
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -512,18 +555,18 @@ class canreverse(Resource):
 # --------
 #
 @api.route('/<int:DeviceNumber>/ismoving', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class ismoving(Resource):
 
     @api.doc(description='True if the Rotator is currently moving to a new position. False if the Rotator is stationary.')
-    @api.marshal_with(m_BoolResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_BoolResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -536,18 +579,18 @@ class ismoving(Resource):
 # --------
 #
 @api.route('/<int:DeviceNumber>/position', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class position(Resource):
 
     @api.doc(description='Current instantaneous Rotator mechanical angle (degrees).')
-    @api.marshal_with(m_FloatResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_FloatResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -560,18 +603,18 @@ class position(Resource):
 # -------
 #
 @api.route('/<int:DeviceNumber>/reverse', methods=['GET','PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class reverse(Resource):
 
     @api.doc(description='Returns the Rotator\'s <b>Reverse</b> state.')
-    @api.marshal_with(m_BoolResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_BoolResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -579,15 +622,15 @@ class reverse(Resource):
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Reverse', 'True if the rotation and angular ' + 
                           'direction must be reversed to match the optical ' +
                           'characteristics', 'formData', type='boolean', default=False, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
@@ -604,18 +647,18 @@ class reverse(Resource):
 # --------
 #
 @api.route('/<int:DeviceNumber>/stepsize', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class stepsize(Resource):
 
     @api.doc(description='The minimum angular step size (degrees).')
-    @api.marshal_with(m_FloatResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_FloatResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -628,18 +671,18 @@ class stepsize(Resource):
 # --------------
 #
 @api.route('/<int:DeviceNumber>/targetposition', methods=['GET']) 
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class targetposition(Resource):
 
     @api.doc(description='The destination mechanical angle for <b>Move()</b> and <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_FloatResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'query', type='integer', default='1234')
-    @api.param(m_FldCtId, m_DescCtId, 'query', type='integer', default='1')
+    @api.marshal_with(m_FloatResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'query', type='integer', default='1234')
+    @api.param(s_FldCtId, s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -653,18 +696,18 @@ class targetposition(Resource):
 #
 
 @api.route('/<int:DeviceNumber>/halt', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class halt(Resource):
 
     @api.doc(description='Immediately stop any Rotator motion due to a previous <b>Move()</b> or <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = PropertyResponse(None, ASCOMErrors.NotConnected)
             return vars(R)
@@ -679,21 +722,20 @@ class halt(Resource):
 #
 
 @api.route('/<int:DeviceNumber>/move', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class move(Resource):
     
-    
     @api.doc(description='Causes the rotator to move <b>Position</b> degrees relative to the current <b>Position</b>.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Position', 'Angle to move in degrees relative to the current <b>Position</b>.', 
                            'formData', type='number', default = 0.0, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
@@ -715,20 +757,20 @@ class move(Resource):
 #
 
 @api.route('/<int:DeviceNumber>/moveabsolute', methods=['PUT'])
-@api.param(m_FldDevNum, m_DescDevNum, 'path', type='integer', default='0')
-@api.response(400, m_Resp400Missing, m_ErrorMessage)
-@api.response(500, m_Resp500SrvErr, m_ErrorMessage)
+@api.param(s_FldDevNum, s_DescDevNum, 'path', type='integer', default='0')
+@api.response(400, s_Resp400Missing, m_ErrorMessage)
+@api.response(500, s_Resp500SrvErr, m_ErrorMessage)
 class moveabsolute(Resource):
     
     @api.doc(description='Causes the rotator to move the absolute position of <b>Position</b> degrees.')
-    @api.marshal_with(m_MethodResponse, description=m_DescMthRsp)
+    @api.marshal_with(m_MethodResponse, description=s_DescMthRsp, skip_none=True)
     @api.param('Position', 'Destination mechanical angle to which the rotator will move (degrees).',
                             'formData', type='number',  default=0.0, required=True)
-    @api.param(m_FldClId, m_DescClId, 'formData', type='integer', default=1234)
-    @api.param(m_FldCtId, m_DescCtId, 'formData', type='integer', default=1)
+    @api.param(s_FldClId, s_DescClId, 'formData', type='integer', default=1234)
+    @api.param(s_FldCtId, s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if (DeviceNumber != 0):
-            abort(400, m_Resp400NoDevNo)
+        if DeviceNumber != 0:
+            abort(400, s_Resp400NoDevNo)
         if not _ROT.connected:
             R = MethodResponse(ASCOMErrors.NotConnected)
             return vars(R)
@@ -743,12 +785,37 @@ class moveabsolute(Resource):
         R = MethodResponse()
         return vars(R)
 
+# ==========
+# SETUP FORM
+# ==========
+#
+# Need full path as this is not running through the blueprinted FRP REST api
+# Simplified yet CSRF protected via Flask-WTF and its FlaskForm
+#
+@app.route('/api/v1/rotator/0/setup', methods=['GET', 'POST'])
+def setup():
+
+    setup_form = SetupForm()                            # FlaskForm auto-loads the form from a POST
+    if setup_form.validate_on_submit():
+        _ROT.reverse = setup_form.reverse.data
+        _ROT.step_size = setup_form.step_size.data
+        _ROT.steps_per_sec = setup_form.steps_sec.data
+        flash('Settings successfully updated')
+
+    setup_form.reverse.data = _ROT.reverse
+    setup_form.step_size.data = _ROT.step_size
+    setup_form.steps_sec.data = _ROT.steps_per_sec
+
+    return render_template('/setup.html', 
+                form=setup_form, 
+                template='form_page',
+                title='Rotator Simulator Setup Form')
 
 # ==================
 # SERVER APPLICATION
 # ==================
 #
-# Start it this way to get  the automatic tab on Chrome
+# Start it this way to get the automatic tab on Chrome
 # with the right host/port.
 #
 if __name__ == '__main__':

@@ -1,0 +1,48 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>{{title}}</title>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+</head>
+<body>
+    {% block content %}
+    <div class="formwrapper">
+
+        <form method=post>
+
+            {{ form.hidden_tag() }}  <!-- CSRF protection with SECRET_KEY -->
+
+            <div class="can_reverse">
+                {{ form.can_reverse() }} {{ form.can_reverse.label }}
+            </div><br />
+
+            <div class="step_size">
+                {{ form.step_size(placeholder='1.0') }} {{ form.step_size.label }}
+                {% if form.step_size.errors %}
+                <ul class="errors">{% for error in form.step_size.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div><br />
+
+            <div class="steps_sec">
+                {{ form.steps_sec(placeholder='15') }} {{ form.steps_sec.label }}
+                {% if form.steps_sec.errors %}
+                <ul class="errors">{% for error in form.steps_sec.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                {% endif %}
+            </div><br />
+
+            <div class="update">
+                <input id="update" type="submit" value="Submit">
+            </div>
+        </form>
+    </div>
+
+    {% for message in get_flashed_messages() %}
+    <div class="alert alert-warning">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endblock %}
+</body>
+</html>

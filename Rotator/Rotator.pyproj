@@ -11,7 +11,7 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Web launcher</LaunchProvider>
-    <WebBrowserUrl>http://localhost</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost:5555/api/v1/rotator/</WebBrowserUrl>
     <OutputPath>.</OutputPath>
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>Rotator</Name>
@@ -31,6 +31,9 @@
     <Compile Include="ASCOMErrors.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="forms.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="RotatorDevice.py">
       <SubType>Code</SubType>
     </Compile>
@@ -40,6 +43,7 @@
     <Content Include="requirements.txt" />
     <Content Include="static\AlpacaLogo128.png" />
     <Content Include="static\favicon.ico" />
+    <Content Include="templates\setup.html" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">

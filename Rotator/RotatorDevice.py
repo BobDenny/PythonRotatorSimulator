@@ -1,7 +1,8 @@
 #
 # Implements a Rotator device
 #
-
+# 16-Mar-2019   rbd Add steps_per_sec property, add setters to step_size and steps_per_sec for setup form
+#
 from threading import Timer
 from threading import Lock
 
@@ -123,6 +124,23 @@ class RotatorDevice(object):
         res =  self._step_size
         self._lock.release()
         return res
+    @step_size.setter
+    def step_size (self, step_size):
+        self._lock.acquire()
+        self._step_size = step_size
+        self._lock.release()
+
+    @property
+    def steps_per_sec(self):
+        self._lock.acquire()
+        res =  self._steps_per_sec
+        self._lock.release()
+        return res
+    @steps_per_sec.setter
+    def steps_per_sec (self, steps_per_sec):
+        self._lock.acquire()
+        self._steps_per_sec = steps_per_sec
+        self._lock.release()
 
     @property
     def position(self):
@@ -158,6 +176,10 @@ class RotatorDevice(object):
     def connected (self, connected):
         self._lock.acquire()
         self._connected = connected
+        if connected:
+            print('[connected]')
+        else:
+            print('[disconnected]')
         self._lock.release()
 
     #
@@ -189,5 +211,6 @@ class RotatorDevice(object):
         self.start()
 
     def Halt(self):
+        print('[Halt]')
         self.stop()
 
