@@ -17,6 +17,7 @@
     <Name>Rotator</Name>
     <RootNamespace>Rotator</RootNamespace>
     <InterpreterId>MSBuild|env|$(MSBuildProjectFullPath)</InterpreterId>
+    <SuppressPackageInstallationPrompt>True</SuppressPackageInstallationPrompt>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
@@ -32,6 +33,15 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="forms.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="DiscoveryResponder.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="ManagementAPI.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="RotatorAPI.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="RotatorDevice.py">
