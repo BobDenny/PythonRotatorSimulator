@@ -1,5 +1,5 @@
 #
-# Common ASCOM Exceptions - Only those for the Rotator
+# Common ASCOM Exceptions
 #
 # See ASCOM Platform Developer Help > ASCOM Namespaces > ASCOM > Error Codes Class
 # On Alpaca, the lowest 12 bits are used as the error. When interoperating with 
@@ -41,6 +41,3 @@ class ValueNotSet(object):
     Number = 0x402
     Message = 'The value has not yet been set.'
 
-#
-# Specific errors for Rotator
-#

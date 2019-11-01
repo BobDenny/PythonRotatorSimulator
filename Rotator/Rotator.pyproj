@@ -41,6 +41,9 @@
     <Compile Include="ManagementAPI.py">
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="shr.py">
+      <SubType>Code</SubType>
+    </Compile>
     <Compile Include="RotatorAPI.py">
       <SubType>Code</SubType>
     </Compile>

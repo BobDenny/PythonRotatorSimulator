@@ -21,6 +21,10 @@
 # 17-Mar-2019   rbd Version 0.5 (cont) actually 2 days with the setup form, getting it 'right'
 # 30-Oct-2019   rbd Version 0.6 Add discovery protocol responder, massive refactoring, no longer
 #                   'simple' as we now have a discovery responder will be adding the management API
+# 31-Oct-2019   rbd Version 0.6 (cont) MAJOR refactoring, cross-thread server trans ID, changing the
+#                   browser setup and adding the management API. Add optional production WSGI server
+#                   'gevent.WSGIServer' see https://stackoverflow.com/a/53918402. Fix pass-through
+#                   pf ClientTransactionID on methos responses (was always 0).
 # =================================================================================================
 
 #
@@ -30,27 +34,27 @@
 #
 # Strongly recommended Flask training, free, concise, and easy to understand.
 # See the Building Flask Apps table of contents right under the main graphic.
-# https://hackersandslackers.com/creating-your-first-flask-application/
+#       https://hackersandslackers.com/creating-your-first-flask-application/
 # Note particularly 
 #       https://hackersandslackers.com/serving-static-assets-in-flask/
 #       https://hackersandslackers.com/guide-to-building-forms-in-flask
 # And there's always Miguel Grinberg:
 #       https://blog.miguelgrinberg.com/post/the-flask-mega-tutorial-part-i-hello-world
-#
 # Also you should be aware of this 'awesome' resource (haha)
-# https://github.com/humiaozuzu/awesome-flask
+#       https://github.com/humiaozuzu/awesome-flask
+# For the "production" WSGI webserver 'gevent' see 
+#       http://www.gevent.org/api/gevent.pywsgi.html
 #
 
 import os
 from flask import Flask, Blueprint, request, abort, make_response, render_template, flash
 from flask_restplus import Api, Resource, fields
+from gevent.pywsgi import WSGIServer
 
 import ASCOMErrors                                      # All Alpaca Devices
 
-# --------------
-# Driver Version
-# --------------
-m_DriverVersion = '0.6'                                 # Major.Minor only
+import shr                                              # Thread-safe shared vars
+shr.init()
 
 # -----------------
 #Network Connection
@@ -80,6 +84,7 @@ import RotatorAPI
 
 app = Flask(__name__, static_url_path='', static_folder='static', template_folder='templates')
 # needed for session (flash queue uses this), CSRF protection
+app.config['FLASK_ENV'] = 'development'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'we-did-it-for-harambe'
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
 app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so hide this from Swagger
@@ -130,4 +135,20 @@ def setup():
 # with the right host/port.
 #
 if __name__ == '__main__':
+    #
+    # -----------
+    # Development 
+    # -----------
+    # (built-in Werkzeug)
+    #
     app.run(HOST, PORT)
+    #
+    # ----------
+    # Production
+    # ----------
+    # You probably want to alter logging, it's going to the console by default
+    # http://www.gevent.org/api/gevent.pywsgi.html
+    #
+    #http_server = WSGIServer((HOST, PORT), app)
+    #http_server.serve_forever()
+
