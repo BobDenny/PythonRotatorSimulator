@@ -11,7 +11,7 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Web launcher</LaunchProvider>
-    <WebBrowserUrl>http://localhost:5555/management</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost:5555/setup</WebBrowserUrl>
     <OutputPath>.</OutputPath>
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>Rotator</Name>
@@ -39,6 +39,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="ManagementAPI.py">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="SetupAPI.py">
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="shr.py">

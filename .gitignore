@@ -259,8 +259,9 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
+
+# (rbd) Specific to this solution
 /Rotator/env
 /Conform Validation
-dist
+/dist
 /RotatorSimulator.zip
-/TestBed/env1

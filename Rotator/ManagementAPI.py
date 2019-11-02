@@ -1,6 +1,6 @@
-# =====================
-# ALPACA MANAGEMENT API
-# =====================
+# ==========================
+# ALPACA JSON MANAGEMENT API
+# ==========================
 
 from flask import Flask, Blueprint, request, abort
 from flask_restplus import Api, Resource, fields
@@ -12,18 +12,18 @@ mgmt_blueprint = Blueprint('Management', __name__,
                       static_folder='static')
 
 #
-# Set up the  Flask-RESTPlus api for Rotator and use the above 
+# Set up the  Flask-RESTPlus api for Management and use the above 
 # blueprint to establish the endpoint prefix.
 #
 api = Api(default='management', 
-            default_label='<h2>ASCOM Alpaca Management API: Base URL = <tt>/management',
+            default_label='<h2>ASCOM Alpaca Management API (JSON): Base URL = <tt>/management</tt>',
             contact='Bob Denny, DC-3 Dreams, SP',
             contact_email='rdenny@dc3.com',
             version='Exp. 1.0')
 
 api.init_app(mgmt_blueprint, 
             version = '1.0',
-            title='ASCOM Alpaca Management API', 
+            title='ASCOM Alpaca Management API (JSON)', 
             description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>'+
                 '<img src=\'static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
                 '<h2>This API enables Alpaca devices to be managed</h2>\r\n' +

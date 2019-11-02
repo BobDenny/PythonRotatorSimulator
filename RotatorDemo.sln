@@ -9,7 +9,8 @@ Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TestBed", "TestBed\TestBed.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{981CB1D7-9FCD-4806-8988-9C90EBC84F1A}"
 	ProjectSection(SolutionItems) = preProject
-		..\Flask-RestPlus.pdf = ..\Flask-RestPlus.pdf
+		..\Flask 1.1 Documentation.pdf = ..\Flask 1.1 Documentation.pdf
+		..\Flask-RESTPlus 0.13 Documentation.pdf = ..\Flask-RESTPlus 0.13 Documentation.pdf
 	EndProjectSection
 EndProject
 Global

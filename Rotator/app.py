@@ -26,7 +26,8 @@
 #                   'gevent.WSGIServer' see https://stackoverflow.com/a/53918402. Fix pass-through
 #                   of ClientTransactionID on method responses (was always 0). PASSES CONFORM.
 # 01-Nov-2019   rbd Version 0.6 (cont) Correct Swagger 200 decscriptions on all GET methods in the 
-#                   Rotator API. Implement Management API. Pick up stray cosmetics.
+#                   Rotator API. Implement JSON Management API. Pick up stray cosmetics. Start 
+#                   HTML Browser UI
 # =================================================================================================
 
 # ===============================
@@ -51,8 +52,7 @@
 #
 
 import os
-from flask import Flask, Blueprint, request, abort, make_response, render_template, flash
-from flask_restplus import Api, Resource, fields
+from flask import Flask, Blueprint, request
 from gevent.pywsgi import WSGIServer
 
 import ASCOMErrors                                      # All Alpaca Devices
@@ -87,6 +87,11 @@ import RotatorAPI
 #---------------
 import ManagementAPI
 
+# --------------
+# HTML Setup API
+#---------------
+import SetupAPI
+
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -104,38 +109,11 @@ app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so
 # -----------------
 app.register_blueprint(RotatorAPI.rot_blueprint)
 app.register_blueprint(ManagementAPI.mgmt_blueprint)
+app.register_blueprint(SetupAPI.html_blueprint)
 
 import logging
 log = logging.getLogger('werkzeug')                 # Webserver used by Flask (dev/small server)
 log.setLevel(logging.ERROR)                         # Prevent successful HTTP traffic from being logged
-
-
-# ======================
-# BROWSER MANAGEMENT API
-# ======================
-#
-# Need full path as this is not running through the blueprinted FRP REST api
-# Simplified yet CSRF protected via Flask-WTF and its FlaskForm
-#
-from forms import SetupForm                             # Provides web-based setup UI for the rotator
-@app.route('/setup/v1/rotator/0/setup', methods=['GET', 'POST'])
-def setup():
-    _ROT = RotatorAPI._ROT
-    setup_form = SetupForm()                            # FlaskForm auto-loads the form from a POST
-    if setup_form.validate_on_submit():
-        _ROT.reverse = setup_form.reverse.data
-        _ROT.step_size = setup_form.step_size.data
-        _ROT.steps_per_sec = setup_form.steps_sec.data
-        flash('Settings successfully updated')
-
-    setup_form.reverse.data = _ROT.reverse
-    setup_form.step_size.data = _ROT.step_size
-    setup_form.steps_sec.data = _ROT.steps_per_sec
-
-    return render_template('/setup.html', 
-                form=setup_form, 
-                template='form_page',
-                title='Rotator Simulator Setup Form')
 
 
 # ==================
