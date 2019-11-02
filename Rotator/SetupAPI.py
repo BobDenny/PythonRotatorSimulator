@@ -2,22 +2,22 @@
 # ALPACA HTML MANAGEMENT API
 # ==========================
 
-from flask import Flask, Blueprint, request, response, abort, render_template, flash
+from flask import Flask, Blueprint, request, abort, render_template, make_response, flash
 from flask_restplus import Api, Resource, fields
-import ASCOMErrors                                      # All Alpaca Devices
 import RotatorAPI
 import shr
 
-html_blueprint = Blueprint('Setup', __name__, 
-                      url_prefix='/setup',
+html_blueprint = Blueprint('Setup', __name__,
+                      url_prefix='',
                       static_folder='static')
 
 #
 # Set up the  Flask-RESTPlus api for Setup and use the above 
 # blueprint to establish the endpoint prefix.
 #
-api = Api(default='setup', 
-            default_label='<h2>ASCOM Alpaca HTML Browser UI: Base URL = <tt>/setup</tt>',
+api = Api(default='',
+            doc='/html/',  # This puts the Swagger UI for the HTML Browser UI on '/html/' leaving '/' and '/setup' open 
+            default_label='<h2>ASCOM Alpaca HTML Browser UI: Base URL = <tt>/</tt>',
             contact='Bob Denny, DC-3 Dreams, SP',
             contact_email='rdenny@dc3.com',
             version='Exp. 1.0')
@@ -26,7 +26,7 @@ api.init_app(html_blueprint,
             version = '1.0',
             title='ASCOM Alpaca HTML Browser UI', 
             description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>'+
-                '<img src=\'static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
+                '<img src=\'/static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
                 '<h2>This API enables Alpaca devices to be managed</h2>\r\n' +
                 '<a href=\'https://ascom-standards.org/Developer/ASCOM%20Alpaca%20API%20Reference.pdf\' target=\'_new\'>' +
                     'View the ASCOM Alpaca API Reference (PDF)</a><br /><br />\r\n' + 
@@ -35,29 +35,84 @@ api.init_app(html_blueprint,
 
 m_ErrorMessage = api.model(shr.s_FldErrMsg, {shr.s_FldValue : fields.String(description=shr.s_DescErrMsg, required=True)})
 
-from forms import SetupForm                             # Provides web-based setup UI for the rotator
-@api.route('/v1/rotator/<int:DeviceNumber>/setup', methods=['GET', 'POST'])
+from forms import SvrSetupForm                              # Provides web-based setup UI for the server
+@api.route('/setup/', methods=['GET', 'POST'])              # The trailing / is vital
+@api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
+class svrsetup(Resource):
+
+    @api.doc(description='Primary browser web page for the overall collection of devices. ' +
+                         'To access this use the <a href=\'/setup\'>HTML Interface</a>, not this Swagger UI')
+    def get(self):
+        setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST
+        #
+        # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
+        # Swagger UI for the HTML Setup endpoints, so I needed to force the 
+        # content-type over to text/html.  (typ.)
+        #
+        response = make_response(render_template('/svrsetup.html', 
+                    form=setup_form, 
+                    template='form_page',
+                    title='Rotator Simulator Server Setup Form'))
+        response.headers['Content-Type'] = 'text/html'
+        return response
+
+    @api.doc(description='Primary browser web page for the overall collection of devices. ' +
+                         'To access this use the <a href=\'/\'>HTML Interface</a>, not this Swagger UI')
+    def post(self, DeviceNumber):
+        if DeviceNumber != 0:
+            abort(400, shr.s_Resp400NoDevNo)
+        setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST
+        response = make_response(render_template('/svrsetup.html', 
+                    form=setup_form, 
+                    template='form_page',
+                    title='Rotator Simulator Server Setup Form'))
+        response.headers['Content-Type'] = 'text/html'
+        return response
+
+
+from forms import DevSetupForm                             # Provides web-based setup UI for the rotator device
+@api.route('/setup/v1/rotator/<int:DeviceNumber>/setup', methods=['GET', 'POST'])
+@api.param(shr.s_FldDevNum, shr.s_DescDevNum, 'path', type='integer', default='0')
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class devsetup(Resource):
 
-    @api.doc(description='Web page user interface that enables device specific configuration to be set for each available device. This must be implemented, even if the response to the user is that the device is not configurable.')
+    @api.doc(description='Web page user interface that enables device specific configuration to be set for each available device. This must be implemented, even if the response to the user is that the device is not configurable. ' +
+                         'To access this use the <a href=\'/\'>HTML Interface</a>, not this Swagger UI')
     def get(self, DeviceNumber):
         if DeviceNumber != 0:
             abort(400, shr.s_Resp400NoDevNo)
         _ROT = RotatorAPI._ROT
-        setup_form = SetupForm()                            # FlaskForm auto-loads the form from a POST
+        setup_form = DevSetupForm()                            # FlaskForm auto-loads the form from a POST
+        setup_form.reverse.data = _ROT.reverse
+        setup_form.step_size.data = _ROT.step_size
+        setup_form.steps_sec.data = _ROT.steps_per_sec
+        #
+        # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
+        # Swagger UI for the HTML Setup endpoints, so I needed to force the 
+        # content-type over to text/html.  (typ.)
+        #
+        response = make_response(render_template('/devsetup.html', 
+                    form=setup_form, 
+                    template='form_page',
+                    title='Rotator Simulator Device Setup Form'))
+        response.headers['Content-Type'] = 'text/html'
+        return response
+
+    @api.doc(description='Web page user interface that enables device specific configuration to be set for each available device. This must be implemented, even if the response to the user is that the device is not configurable. ' +
+                         'To access this use the HTML Interface, not this Swagger UI')
+    def post(self, DeviceNumber):
+        if DeviceNumber != 0:
+            abort(400, shr.s_Resp400NoDevNo)
+        _ROT = RotatorAPI._ROT
+        setup_form = DevSetupForm()                             # FlaskForm auto-loads the form from a POST
         if setup_form.validate_on_submit():
             _ROT.reverse = setup_form.reverse.data
             _ROT.step_size = setup_form.step_size.data
             _ROT.steps_per_sec = setup_form.steps_sec.data
             flash('Settings successfully updated')
-
-        setup_form.reverse.data = _ROT.reverse
-        setup_form.step_size.data = _ROT.step_size
-        setup_form.steps_sec.data = _ROT.steps_per_sec
-
-        return render_template('/setup.html', 
+        response = make_response(render_template('/setup.html', 
                     form=setup_form, 
                     template='form_page',
-                    title='Rotator Simulator Setup Form')
-
+                    title='Rotator Simulator Device Setup Form'))
+        response.headers['Content-Type'] = 'text/html'
+        return response

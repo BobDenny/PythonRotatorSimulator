@@ -104,7 +104,14 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'we-did-it-for-haramb
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
 app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so hide this from Swagger
 
-# -----------------
+
+# ----------
+# Index page 
+# ----------
+@app.route('/')             # Must precede others or won't be recognized
+def index():
+    return "<h1>YoMama</h1>"
+
 # Register our APIs
 # -----------------
 app.register_blueprint(RotatorAPI.rot_blueprint)
@@ -114,7 +121,6 @@ app.register_blueprint(SetupAPI.html_blueprint)
 import logging
 log = logging.getLogger('werkzeug')                 # Webserver used by Flask (dev/small server)
 log.setLevel(logging.ERROR)                         # Prevent successful HTTP traffic from being logged
-
 
 # ==================
 # SERVER APPLICATION

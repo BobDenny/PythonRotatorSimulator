@@ -35,7 +35,7 @@ api.init_app(rot_blueprint,
             version = '1.0',
             title='ASCOM Alpaca Rotator Simulator', 
             description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>'+
-                '<img src=\'static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
+                '<img src=\'/static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
                 '<h2>This device is an ASCOM Rotator simulator that responds to ' +
                 'the standard ASCOM Alpaca API for Rotator</h2>\r\n' +
                 '<a href=\'https://ascom-standards.org/Developer/ASCOM%20Alpaca%20API%20Reference.pdf\' target=\'_new\'>' +

@@ -7,7 +7,7 @@ from wtforms import Form, BooleanField, IntegerField, FloatField, validators, Su
 from wtforms.validators import ValidationError, DataRequired, NumberRange
 from flask_wtf import FlaskForm     # *** NOTE THIS ***
 
-class SetupForm(FlaskForm):
+class DevSetupForm(FlaskForm):
 
     reverse =       BooleanField(label='Reverse', 
                         description='True if the rotator\'s direction should be clockwise.')
@@ -20,6 +20,9 @@ class SetupForm(FlaskForm):
     steps_sec =     IntegerField(label = 'Steps per sec.', 
                         description='Angular rotation rate in whole steps per second',
                         validators=[DataRequired('Step per sec. must not be empty'),
-                                    NumberRange(min=5, max=60, message='Steps per sec. must be between 5 and 60')])
+                                    NumberRange(min=1, max=60, message='Steps per sec. must be between 1 and 60')])
 
     update =        SubmitField('Update')
+
+class SvrSetupForm(FlaskForm):
+    nothing = ''

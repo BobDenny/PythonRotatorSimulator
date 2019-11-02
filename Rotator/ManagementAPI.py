@@ -25,7 +25,7 @@ api.init_app(mgmt_blueprint,
             version = '1.0',
             title='ASCOM Alpaca Management API (JSON)', 
             description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>'+
-                '<img src=\'static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
+                '<img src=\'/static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
                 '<h2>This API enables Alpaca devices to be managed</h2>\r\n' +
                 '<a href=\'https://ascom-standards.org/Developer/ASCOM%20Alpaca%20API%20Reference.pdf\' target=\'_new\'>' +
                     'View the ASCOM Alpaca API Reference (PDF)</a><br /><br />\r\n' + 

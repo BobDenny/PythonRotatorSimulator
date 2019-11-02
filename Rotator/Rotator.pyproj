@@ -11,7 +11,7 @@
     </SearchPath>
     <WorkingDirectory>.</WorkingDirectory>
     <LaunchProvider>Web launcher</LaunchProvider>
-    <WebBrowserUrl>http://localhost:5555/setup</WebBrowserUrl>
+    <WebBrowserUrl>http://localhost:5555/</WebBrowserUrl>
     <OutputPath>.</OutputPath>
     <SuppressCollectPythonCloudServiceFiles>true</SuppressCollectPythonCloudServiceFiles>
     <Name>Rotator</Name>
@@ -59,7 +59,9 @@
     <Content Include="requirements.txt" />
     <Content Include="static\AlpacaLogo128.png" />
     <Content Include="static\favicon.ico" />
-    <Content Include="templates\setup.html" />
+    <Content Include="templates\devsetup.html" />
+    <Content Include="templates\svrsetup.html" />
+    <Content Include="templates\index.html" />
   </ItemGroup>
   <ItemGroup>
     <Interpreter Include="env\">
