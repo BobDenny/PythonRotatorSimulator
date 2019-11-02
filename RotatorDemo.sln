@@ -1,11 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.106
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Rotator", "Rotator\Rotator.pyproj", "{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}"
 EndProject
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "TestBed", "TestBed\TestBed.pyproj", "{77C12E96-CF1A-4AA0-AB0E-8927C4C137AE}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{981CB1D7-9FCD-4806-8988-9C90EBC84F1A}"
+	ProjectSection(SolutionItems) = preProject
+		..\Flask-RestPlus.pdf = ..\Flask-RestPlus.pdf
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

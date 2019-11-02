@@ -1,9 +1,11 @@
 import ASCOMErrors
 
-# --------------
-# Driver Version
-# --------------
+# -----------
+# Driver Info
+# -----------
 m_DriverVersion = '0.6'                                 # Major.Minor only
+m_DriverAPIVersions = [1]                               # Supported API Versions
+
 
 # ------------------------------
 # Common strings used throughout
@@ -24,17 +26,18 @@ s_FldErrMsg =   'ErrorMessage'
 # Common/shared description strings
 #
 s_DescDevNum =  'Zero-based device number as set on the server'
-s_DescClId =    'Client\'s unique ID. The client should choose a random value at startup and send this value with every transaction.'
-s_DescCtId =    'Client\'s transaction ID as supplied by the client in the command request. The cleint should start this count at 1 and increment by 1 on each successive transaction.'
-s_DescStId =    'Server\'s transaction ID; should be unique for each client transaction so that log messages on the client can be associated with logs on the device.'
-s_DescErrNum =  'Zero for a successful transaction, or a 12-bit non-zero Alpaca error code if the device encountered an issue.'
-s_DescErrMsg =  'Empty string for a successful transaction, or a message describing the issue that was encountered.'
+s_DescClId =    'Client\'s unique ID (0 to 4294967295). The client should choose a value at start-up, e.g. a random value between 0 and 65535, and send this value on every transaction to help associate entries in device logs with this particular client'
+s_DescCtId =    'Client\'s transaction ID (0 to 4294967295). The client should start this count at 1 and increment by one on each successive transaction. This will aid associating entries in device logs with corresponding entries in client side logs.'
+s_DescStId =    'Server\'s transaction ID (0 to 4294967295), should be unique for each client transaction so that log messages on the client can be associated with logs on the device.'
+s_DescErrNum =  'Zero for a successful transaction, or a non-zero integer (-2147483648 to 2147483647) if the device encountered an issue. Devices must use ASCOM reserved error numbers whenever appropriate so that clients can take informed actions. E.g. returning 0x401 (1025) to indicate that an invalid value was received (see Alpaca API definition and developer documentation for further information).'
+s_DescErrMsg =  'Empty string for a successful transaction, or a message describing the issue that was encountered. If an error message is returned, a non zero error number must also be returned.'
+s_DescGetRsp =  'Driver response'
 s_DescMthRsp =  'Transaction complete or exception'
 
 #
 # Common/shared response strings
 #
-s_Resp400Missing =  'DeviceNumber, command, or parameter values, are missing or invalid'
+s_Resp400Missing =  'Method or parameter value error, check error message'
 s_Resp400NoDevNo =  'No such DeviceNumber'
 s_Resp500SrvErr =   'Server internal error, check error message'
 

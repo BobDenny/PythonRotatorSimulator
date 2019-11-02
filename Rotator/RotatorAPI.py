@@ -41,7 +41,7 @@ api.init_app(rot_blueprint,
                 '<a href=\'https://ascom-standards.org/Developer/ASCOM%20Alpaca%20API%20Reference.pdf\' target=\'_new\'>' +
                     'View the ASCOM Alpaca API Reference (PDF)</a><br /><br />\r\n' + 
                 '<a href=\'https://ascom-standards.org/api/?urls.primaryName=ASCOM%20Alpaca%20Device%20API\' target=\'_new\'>' +
-                'Try out the live ASCOM Alpaca API (Swagger)</a><br /><br /></div>')
+                'Try out the official live ASCOM Alpaca API (Swagger)</a><br /><br /></div>')
 
 
 
@@ -211,7 +211,7 @@ class commandstring(Resource):
 class connected(Resource):
 
     @api.doc(description='Retrieves the connected state of the Rotator.')
-    @api.marshal_with(m_BoolResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_BoolResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default=1)
     def get(self, DeviceNumber):
@@ -249,7 +249,7 @@ class connected(Resource):
 class description(Resource):
 
     @api.doc(description='Returns a description of the device, such as manufacturer and modelnumber. Any ASCII characters may be used.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -271,7 +271,7 @@ class description(Resource):
 class driverinfo(Resource):
 
     @api.doc(description='Descriptive and version information about this ASCOM driver.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -293,7 +293,7 @@ class driverinfo(Resource):
 class driverversion(Resource):
 
     @api.doc(description='A string containing only the major and minor version of the driver.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -314,7 +314,7 @@ class driverversion(Resource):
 class interfaceversion(Resource):
 
     @api.doc(description='The interface version number that this device supports. Should return 2 for this interface version.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -335,7 +335,7 @@ class interfaceversion(Resource):
 class name(Resource):
 
     @api.doc(description='The short name of the driver, for display purposes.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -377,7 +377,7 @@ class supportedactions(Resource):
 class canreverse(Resource):
 
     @api.doc(description='True if the Rotator supports the <b>Reverse</b> method.')
-    @api.marshal_with(m_BoolResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_BoolResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -401,7 +401,7 @@ class canreverse(Resource):
 class ismoving(Resource):
 
     @api.doc(description='True if the Rotator is currently moving to a new position. False if the Rotator is stationary.')
-    @api.marshal_with(m_BoolResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_BoolResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -425,7 +425,7 @@ class ismoving(Resource):
 class position(Resource):
 
     @api.doc(description='Current instantaneous Rotator mechanical angle (degrees).')
-    @api.marshal_with(m_FloatResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_FloatResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -449,7 +449,7 @@ class position(Resource):
 class reverse(Resource):
 
     @api.doc(description='Returns the Rotator\'s <b>Reverse</b> state.')
-    @api.marshal_with(m_BoolResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_BoolResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -493,7 +493,7 @@ class reverse(Resource):
 class stepsize(Resource):
 
     @api.doc(description='The minimum angular step size (degrees).')
-    @api.marshal_with(m_FloatResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_FloatResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
@@ -517,7 +517,7 @@ class stepsize(Resource):
 class targetposition(Resource):
 
     @api.doc(description='The destination mechanical angle for <b>Move()</b> and <b>MoveAbsolute()</b>.')
-    @api.marshal_with(m_FloatResponse, description=shr.s_DescMthRsp, skip_none=True)
+    @api.marshal_with(m_FloatResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):

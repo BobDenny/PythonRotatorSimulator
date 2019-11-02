@@ -24,14 +24,18 @@
 # 31-Oct-2019   rbd Version 0.6 (cont) MAJOR refactoring, cross-thread server trans ID, changing the
 #                   browser setup and adding the management API. Add optional production WSGI server
 #                   'gevent.WSGIServer' see https://stackoverflow.com/a/53918402. Fix pass-through
-#                   pf ClientTransactionID on methos responses (was always 0).
+#                   of ClientTransactionID on method responses (was always 0). PASSES CONFORM.
+# 01-Nov-2019   rbd Version 0.6 (cont) Correct Swagger 200 decscriptions on all GET methods in the 
+#                   Rotator API. Implement Management API. Pick up stray cosmetics.
 # =================================================================================================
 
-#
+# ===============================
 # https://ascom-standards.org/api
-# http://flask.pocoo.org/docs/1.0/
-# https://flask-restplus.readthedocs.io/en/stable/index.html
+# ===============================
 #
+# References for the Flask web service and Flask-REST-Plus framework
+#       http://flask.pocoo.org/docs/1.0/
+#       https://flask-restplus.readthedocs.io/en/stable/index.html
 # Strongly recommended Flask training, free, concise, and easy to understand.
 # See the Building Flask Apps table of contents right under the main graphic.
 #       https://hackersandslackers.com/creating-your-first-flask-application/
@@ -73,10 +77,16 @@ PORT = 5555                                             # Port on which Alpaca i
 import DiscoveryResponder
 _DSC = DiscoveryResponder.DiscoveryResponder(HOST, PORT)
 
-# --------------------------------
-# Rotator API and Device Simulator (self-starting thread)
-#---------------------------------
+# -----------
+# Rotator API (this hooks to simulator)
+#------------
 import RotatorAPI
+
+# --------------
+# Management API
+#---------------
+import ManagementAPI
+
 
 # ===============================
 # FLASK SERVER AND REST FRAMEWORK
@@ -93,6 +103,7 @@ app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so
 # Register our APIs
 # -----------------
 app.register_blueprint(RotatorAPI.rot_blueprint)
+app.register_blueprint(ManagementAPI.mgmt_blueprint)
 
 import logging
 log = logging.getLogger('werkzeug')                 # Webserver used by Flask (dev/small server)
