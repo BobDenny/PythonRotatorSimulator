@@ -52,7 +52,7 @@
 #
 
 import os
-from flask import Flask, Blueprint, request
+from flask import Flask, Blueprint, request, render_template
 from gevent.pywsgi import WSGIServer
 
 import ASCOMErrors                                      # All Alpaca Devices
@@ -110,7 +110,8 @@ app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so
 # ----------
 @app.route('/')             # Must precede others or won't be recognized
 def index():
-    return "<h1>YoMama</h1>"
+    return render_template('/index.html',
+                    title='Alpaca Simulator (Python 3 / Flask)')
 
 # Register our APIs
 # -----------------

@@ -1,12 +1,46 @@
-﻿<!doctype html>
+<!DOCTYPE html>
 <html>
 <head>
-    <title>{{title}}</title>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>{{title}}</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 </head>
+
 <body>
-    {% block content %}
-    {% endblock %}
+    <div id="page">
+      <div id="pagetop">
+		<h1>Alpaca Rotator Simulator</h1>
+        <div class="links">    	
+            <ul>
+           	   	<li><a href="/">Home</a></li>
+           	   	<li><a href="/setup">Server Setup</a></li>
+               	<li><a href="/setup/v1/rotator/0/setup">Device 0 Setup</a></li>
+            </ul>
+        </div>
+     </div>
+        
+        <div id="header">   General Information </div>
+  
+<div id="main">
+	<div class="content">
+        	<div class="main_top">
+            	<h1><a href="https://ascom-standards.org/Developer/Alpaca.htm" target="_new"><img src="/AlpacaLogo128.png" width="128" height="101" align="right" margin-left="10"/></a>{{title}}</h1>
+            </div>
+            
+           	<div class="main_body">
+                <p>This is the main user page for a demonstration ASCOM Alpaca rotator simulator. Besides implementing the ASCOM Alpaca Rotator and Management APIs, it also provides live Swagger UI pages with which you can exercise the capabilities: </p>
+				<h2><a href="/html" target="_new">HTML/Web Server and Device Setup Services</a></h2>
+				<h2><a href="/management" target="_new">Alpaca Management API (Server Level)</a></h2>
+				<h2><a href="/api/v1/rotator" target="_new">Rotator Device API (Device Level)</a></h2>
+            </div>
+            
+			</div>
+            <div class="clear">&nbsp;</div>
+        </div>
+		<div id="footer">
+        	<p>Testing 1 2 3</p>
+		</div>        
+    </div>
 </body>
 </html>

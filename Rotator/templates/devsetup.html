@@ -1,52 +1,82 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
 <html>
 <head>
-    <title>{{title}}</title>
-    <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+	<title>{{title}}</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<link rel="stylesheet" type="text/css" href="/style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 </head>
+
 <body>
-    {% block content %}
-    <div class="formwrapper">
-
-        <h2><img src="/AlpacaLogo128.png" width="128" height="101" align="right" />{{title}}</h2>
-
-        <p>Yes, this is an ugly thing. It's an example after all, so simple.</p>
-
-        <form method=post>
-
-            {{ form.hidden_tag() }}  <!-- CSRF protection with SECRET_KEY -->
-
-            <div class="reverse">
-                {{ form.reverse() }} {{ form.reverse.label }}
-            </div><br />
-
-            <div class="step_size">
-                {{ form.step_size(placeholder='1.0') }} {{ form.step_size.label }}
-                {% if form.step_size.errors %}
-                <ul class="errors">{% for error in form.step_size.errors %}<li>{{ error }}</li>{% endfor %}</ul>
-                {% endif %}
-            </div><br />
-
-            <div class="steps_sec">
-                {{ form.steps_sec(placeholder='15') }} {{ form.steps_sec.label }}
-                {% if form.steps_sec.errors %}
-                <ul class="errors">{% for error in form.steps_sec.errors %}<li>{{ error }}</li>{% endfor %}</ul>
-                {% endif %}
-            </div><br />
-
-            <div class="update">
-                <input id="update" type="submit" value="Submit">
+    <div id="page">
+      <div id="pagetop">
+		<h1>Alpaca Rotator Simulator</h1>
+        <div class="links">    	
+            <ul>
+           	   	<li><a href="/">Home</a></li>
+           	   	<li><a href="/setup">Server Setup</a></li>
+               	<li><a href="/setup/v1/rotator/0/setup">Device 0 Setup</a></li>
+            </ul>
+        </div>
+     </div>
+        
+        <div id="header">   Insert slogan here, or leave it blank.     </div>
+  
+<div id="main">
+	<div class="content">
+        	<div class="main_top">
+            	<h1><a href="https://ascom-standards.org/Developer/Alpaca.htm" target="_new"><img src="/AlpacaLogo128.png" width="128" height="101" align="right" margin-left="10" /></a>{{title}}</h1>
             </div>
-        </form>
+            
+           	<div class="main_body">
+				{% block content %}
+				<div class="formwrapper">
+						
+					<p>Yes, this is an ugly thing. It's an example after all, so simple.</p>
+			
+					<form method=post>
+			
+						{{ form.hidden_tag() }}  <!-- CSRF protection with SECRET_KEY -->
+			
+						<div class="reverse">
+							{{ form.reverse() }} {{ form.reverse.label }}
+						</div><br />
+			
+						<div class="step_size">
+							{{ form.step_size(placeholder='1.0') }} {{ form.step_size.label }}
+							{% if form.step_size.errors %}
+							<ul class="errors">{% for error in form.step_size.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+							{% endif %}
+						</div><br />
+			
+						<div class="steps_sec">
+							{{ form.steps_sec(placeholder='15') }} {{ form.steps_sec.label }}
+							{% if form.steps_sec.errors %}
+							<ul class="errors">{% for error in form.steps_sec.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+							{% endif %}
+						</div><br />
+			
+						<div class="update">
+							<input id="update" type="submit" value="Submit">
+						</div>
+					</form>
+				</div>
+			
+				{% for message in get_flashed_messages() %}
+				<div class="alert alert-warning">
+					<button type="button" class="close" data-dismiss="alert">&times;</button>
+					{{ message }}
+				</div>
+				{% endfor %}
+				{% endblock %}
+            </div>
+            
+			</div>
+            <div class="clear">&nbsp;</div>
+        </div>
+		<div id="footer">
+        	<p>Testing 1 2 3</p>
+		</div>        
     </div>
-
-    {% for message in get_flashed_messages() %}
-    <div class="alert alert-warning">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        {{ message }}
-    </div>
-    {% endfor %}
-    {% endblock %}
 </body>
 </html>
