@@ -58,9 +58,7 @@ class svrsetup(Resource):
 
     @api.doc(description='Primary browser web page for the overall collection of devices. ' +
                          'To access this use the <a href=\'/\'>HTML Interface</a>, not this Swagger UI')
-    def post(self, DeviceNumber):
-        if DeviceNumber != 0:
-            abort(400, shr.s_Resp400NoDevNo)
+    def post(self):
         setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST
         response = make_response(render_template('/svrsetup.html', 
                     form=setup_form, 
@@ -79,13 +77,13 @@ class devsetup(Resource):
     @api.doc(description='Web page user interface that enables device specific configuration to be set for each available device. This must be implemented, even if the response to the user is that the device is not configurable. ' +
                          'To access this use the <a href=\'/\'>HTML Interface</a>, not this Swagger UI')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in RotatorAPI.rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        _ROT = RotatorAPI._ROT
+        rotDev = RotatorAPI.RotDev[DeviceNumber]
         setup_form = DevSetupForm()                            # FlaskForm auto-loads the form from a POST
-        setup_form.reverse.data = _ROT.reverse
-        setup_form.step_size.data = _ROT.step_size
-        setup_form.steps_sec.data = _ROT.steps_per_sec
+        setup_form.reverse.data = rotDev.reverse
+        setup_form.step_size.data = rotDev.step_size
+        setup_form.steps_sec.data = rotDev.steps_per_sec
         #
         # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
         # Swagger UI for the HTML Setup endpoints, so I needed to force the 
@@ -101,16 +99,16 @@ class devsetup(Resource):
     @api.doc(description='Web page user interface that enables device specific configuration to be set for each available device. This must be implemented, even if the response to the user is that the device is not configurable. ' +
                          'To access this use the HTML Interface, not this Swagger UI')
     def post(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in RotatorAPI.rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        _ROT = RotatorAPI._ROT
+        rotDev = RotatorAPI.RotDev[DeviceNumber]
         setup_form = DevSetupForm()                             # FlaskForm auto-loads the form from a POST
         if setup_form.validate_on_submit():
-            _ROT.reverse = setup_form.reverse.data
-            _ROT.step_size = setup_form.step_size.data
-            _ROT.steps_per_sec = setup_form.steps_sec.data
+            rotDev.reverse = setup_form.reverse.data
+            rotDev.step_size = setup_form.step_size.data
+            rotDev.steps_per_sec = setup_form.steps_sec.data
             flash('Settings successfully updated')
-        response = make_response(render_template('/setup.html', 
+        response = make_response(render_template('/devsetup.html', 
                     form=setup_form, 
                     template='form_page',
                     title='Rotator Simulator Device Setup Form'))

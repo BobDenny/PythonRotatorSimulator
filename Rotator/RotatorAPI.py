@@ -8,11 +8,16 @@ import ASCOMErrors                                      # All Alpaca Devices
 import shr
 
 #
-# Device simulator
-#
-# **TODO** Create 8 of these and allow 8 clients with different device ID!
+# Simulate nRot rotators
+# ------
+nRot = 4
+hRot = nRot - 1                                         # High device number
+#-------
 import RotatorDevice                                    # Emulates a physical rotator
-_ROT = RotatorDevice.RotatorDevice()                    # Start it up now
+RotDev = [None] * nRot
+rRot = range(0, nRot)
+for i in rRot:
+    RotDev[i] = RotatorDevice.RotatorDevice()             # Start it up now
 
 #
 # Blueprint to create a URL prefix for the rotator API
@@ -116,7 +121,7 @@ class action(Resource):
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         #?# global connected
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.MethodResponse(request.form, ASCOMErrors.NotImplemented)
         return vars(R)
@@ -142,7 +147,7 @@ class commandblind(Resource):
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
         #?# global connected
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.MethodResponse(request.form, ASCOMErrors.NotImplemented)
         return vars(R)
@@ -168,7 +173,7 @@ class commandbool(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.MethodResponse(request.form, ASCOMErrors.NotImplemented)
         return vars(R)
@@ -194,7 +199,7 @@ class commandstring(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.MethodResponse(request.form, ASCOMErrors.NotImplemented)
         return vars(R)
@@ -215,11 +220,11 @@ class connected(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default=1)
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         devno = DeviceNumber                                # Used later for multi-device (typ.)
         cid = shr.get_args_caseless(shr.s_FldClId, request.args, 1234)    # Used if need to ident the Client (typ.)
-        R = shr.PropertyResponse(_ROT.connected, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].connected, request.args)
         return vars(R)
 
     @api.doc(description='Sets the connected state of the Rotator.')
@@ -230,11 +235,11 @@ class connected(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         devno = DeviceNumber
         cid = shr.get_form_caseless(shr.s_FldClId, request.form, 1234)
-        _ROT.connected = (shr.get_form_caseless('Connected', request.form, 'false').lower() == 'true')
+        RotDev[DeviceNumber].connected = (shr.get_form_caseless('Connected', request.form, 'false').lower() == 'true')
         R = shr.MethodResponse(request.form)
         return vars(R)
 
@@ -253,7 +258,7 @@ class description(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         desc = 'Simulated Rotator implemented in Python.'
         R = shr.PropertyResponse(desc, request.args)
@@ -275,7 +280,7 @@ class driverinfo(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         desc = 'ASCOM Alpaca driver for a simulated Rotator. Experimental V' + shr.m_DriverVersion + ' (Python)'
         R = shr.PropertyResponse(desc, request.args)
@@ -297,7 +302,7 @@ class driverversion(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.PropertyResponse(shr.m_DriverVersion, request.args)
         return vars(R)
@@ -318,7 +323,7 @@ class interfaceversion(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.PropertyResponse(2, request.args)
         return vars(R)
@@ -339,7 +344,7 @@ class name(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.PropertyResponse('Rotator Simulator', request.args)
         return vars(R)
@@ -360,7 +365,7 @@ class supportedactions(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
         R = shr.PropertyResponse([], request.args)
         return vars(R)
@@ -381,12 +386,12 @@ class canreverse(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if (not _ROT.connected):
+        if (not RotDev[DeviceNumber].connected):
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.can_reverse, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].can_reverse, request.args)
         return vars(R)
 
 
@@ -405,12 +410,12 @@ class ismoving(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.is_moving, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].is_moving, request.args)
         return vars(R)
 
 
@@ -429,12 +434,12 @@ class position(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.position, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].position, request.args)
         return vars(R)
 
 
@@ -453,12 +458,12 @@ class reverse(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.reverse, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].reverse, request.args)
         return vars(R)
 
     @api.doc(description='Sets the Rotator\'s <b>Reverse</b> state.')
@@ -469,15 +474,15 @@ class reverse(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.MethodResponse(request.form, ASCOMErrors.NotConnected)
             return vars(R)
-        if _ROT.is_moving:
+        if RotDev[DeviceNumber].is_moving:
             R = shr.MethodResponse(request.form, ASCOMErrors.InvalidOperationException)
             return vars(R)
-        _ROT.reverse = (shr.get_form_caseless('Reverse', request.form, 'false').lower() == 'true')     # **TODO** Is this right???
+        RotDev[DeviceNumber].reverse = (shr.get_form_caseless('Reverse', request.form, 'false').lower() == 'true')     # **TODO** Is this right???
         R = shr.MethodResponse(request.form)
         return vars(R)
 
@@ -497,12 +502,12 @@ class stepsize(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.step_size, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].step_size, request.args)
         return vars(R)
 
 
@@ -521,12 +526,12 @@ class targetposition(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        R = shr.PropertyResponse(_ROT.target_position, request.args)
+        R = shr.PropertyResponse(RotDev[DeviceNumber].target_position, request.args)
         return vars(R)
 
 
@@ -546,12 +551,12 @@ class halt(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.PropertyResponse(None, request.args, ASCOMErrors.NotConnected)
             return vars(R)
-        _ROT.Halt()
+        RotDev[DeviceNumber].Halt()
         R = shr.MethodResponse(request.form)
         return vars(R)
 
@@ -574,19 +579,19 @@ class move(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.MethodResponse(request.form, ASCOMErrors.NotConnected)
             return vars(R)
-        if _ROT.is_moving:
+        if RotDev[DeviceNumber].is_moving:
             R = shr.MethodResponse(request.form, ASCOMErrors.InvalidOperationException)
             return vars(R)
         relPos = float(shr.get_form_caseless('Position', request.form, 0.0))
         if relPos >= 360 or relPos <= -360.0:
             R = shr.MethodResponse(request.form, ASCOMErrors.InvalidValue)
             return vars(R)
-        _ROT.Move(relPos)
+        RotDev[DeviceNumber].Move(relPos)
         R = shr.MethodResponse(request.form)
         return vars(R)
 
@@ -609,19 +614,19 @@ class moveabsolute(Resource):
     @api.param(shr.s_FldClId, shr.s_DescClId, 'formData', type='integer', default=1234)
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'formData', type='integer', default=1)
     def put(self, DeviceNumber):
-        if DeviceNumber != 0:
+        if not DeviceNumber in rRot:
             abort(400, shr.s_Resp400NoDevNo)
-        if not _ROT.connected:
+        if not RotDev[DeviceNumber].connected:
             R = shr.MethodResponse(request.form, ASCOMErrors.NotConnected)
             return vars(R)
-        if _ROT.is_moving:
+        if RotDev[DeviceNumber].is_moving:
             R = shr.MethodResponse(request.form, ASCOMErrors.InvalidOperationException)
             return vars(R)
         newPos = float(shr.get_form_caseless('Position', request.form, 0.0))
         if newPos >= 360 or newPos < 0:
             R = shr.MethodResponse(request.form, ASCOMErrors.InvalidValue)
             return vars(R)
-        _ROT.MoveAbsolute(newPos)
+        RotDev[DeviceNumber].MoveAbsolute(newPos)
         R = shr.MethodResponse(request.form)
         return vars(R)
 

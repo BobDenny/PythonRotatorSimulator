@@ -1,9 +1,8 @@
 ASCOM Alpaca Rotator Simulator in Python
 ----------------------------------------
 
-Version: 0.5 (17-Mar-2019)
-New: * Return fields not present in the request with their values set to 0
-     * MVC Setup form - Please see the info below and the code. Note that some new folders and files are included for this.
+Version: 0.6 (01-Nov-2019)
+* Majoe refactoring and addition of functionality including discovery and Management API. 
 By: Bob Denny <rdenny@dc3.com>
 
 This ASCOM Alpaca Standard Rotator simulator will run on Python 3.5 or later (and probably some earlier Python 3s and probably on Python 2.7 as well). 
@@ -11,28 +10,21 @@ This ASCOM Alpaca Standard Rotator simulator will run on Python 3.5 or later (an
 Installation and Test
 ---------------------
 
-(1) PRE-REQUISITES - The file requirements.txt lists the required Python packages and their versions. If you are on Windows and are using Visual Studio 2017 with Python support, requirements.txt is enough to have VS2017 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. The objective, though, is to have this Alpaca Rotator run on a Raspberry Pi or other lightweight platform that supports Python 3 or if you must try Python 2.7. ON THE PI USE PIP3 IF YOU ARE GOING TO RUN PYTHON3 (recommended). 
+(1) PRE-REQUISITES - The file requirements.txt lists the required Python packages and their versions. If you are on Windows and are using Visual Studio 2019 (or 2017) with Python support, requirements.txt is enough to have VS2019 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. The objective, though, is to have this Alpaca Rotator run on a Raspberry Pi or other lightweight platform that supports Python 3 or, if you must, try Python 2.7. ON THE PI USE PIP3 IF YOU ARE GOING TO RUN PYTHON3 (recommended). 
 
-So on the target device, use PIP (or whatever) to install the packages listed in requirements.txt. Some of them are dependencies so you may only need to install
+So on the target device, use PIP3 to install the packages listed in requirements.txt. Some of them are dependencies so you may only need to install
 
 * Flask
 * Flask-RESTPlus
 * WTForms (plural)
 * Flask-WTF
+* gevent (this is huge, and is for the production web server WSGIServer)
 
-After doing these, look and see what else you might need to complete the packages in requirements.txt. Note that the file requirements.txt is not needed in production. It can be  used in Visual Studio 2017 with Python to create a nice virtual environment with the required packages.
+After doing these, look and see what else you might need to complete the packages in requirements.txt. Note that the file requirements.txt is not needed in production. It can be  used in Visual Studio 2019 with Python to create a nice virtual environment with the required packages.
 
-(2) Create the Python application in a folder: Create a folder (e.g.) Rotator. Then copy the contents of the ZIP file (except requirements.txt and README.txt) into that folder. You should end up with 
+(2) Create the Python application in a folder: Create a folder (e.g.) Rotator. Then copy the contents of the ZIP file (except requirements.txt and README.txt) into that folder. There  will be 'static' and 'templates' subfolders.
 
-Rotator
-    [static]
-	    AlpacaLogo128.png
-		favicon.ico
-    app.py
-	ASCOMErrors.py
-	RotatorDevice.py
-
-(3) Edit app.py. Scroll to the bottom and change the IP address 192.168.0.40 to whatever IP address your lightweight device (Raspberry Pi or whatever) is on. Maybe you'll want to change the port 5555 to something else. 
+(3) Edit app.py. Scroll to "Network Connection" area (about line 66) and change the IP address 192.168.0.40 to whatever IP address your lightweight device (Raspberry Pi or whatever) is on. Maybe you'll want to change the port 5555 to something else. 
 
 (4) If needed open the firewall on your system to accept inbound connections on port 5555
 
@@ -50,11 +42,11 @@ This should result in something like
    Use a production WSGI server instead.
  * Debug mode: off 
  
- (6) If you get this far without errors (missing Python dependencies, old versions of Python 3, etc.) you are ready to play with the simulator. Open a web browser and navigate to the Alpaca rotator root which is the Swagger documentation that is served by your Rotator Simulator:
+ (6) If you get this far without errors (missing Python dependencies, old versions of Python 3, etc.) you are ready to play with the simulator. Open a web browser and navigate to the Alpaca Rotator Simulator home page at
  
-     http://192.168.0.40:5555/api/v1/rotator
+     http://192.168.0.40:5555/
 	 
-You should see the Swagger self-documentation/testing user interface in your browser. Exercise the simulator using the Swagger UI. Don't forget that you have to set Connected to True before doing anything else ha ha.
+You should see links to see the Swagger self-documentation/testing user interfaces. Exercise the simulator using the Rotator API Swagger UI as well as the Management API. Don't forget that you have to set Connected to True on the Rotator before doing anything else ha ha.
 
 At this point you should be able to use the Windows Conform tool to validate the correctness of the simulator. In Conform, set it for Rotator conformation then in the ASCOM Chooser select ASCOM Remote 1. Click Properties as usual, and enter the IP address and port of the Pi. and close both windows. Now try to do a Conform check. 
 

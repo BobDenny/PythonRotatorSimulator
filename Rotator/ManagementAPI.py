@@ -4,8 +4,8 @@
 
 from flask import Flask, Blueprint, request, abort
 from flask_restplus import Api, Resource, fields
-import ASCOMErrors                                      # All Alpaca Devices
 import shr
+import RotatorAPI
 
 mgmt_blueprint = Blueprint('Management', __name__, 
                       url_prefix='/management',
@@ -149,12 +149,15 @@ class description(Resource):
 # -----------------
 # This is the actual static description data we return
 #
-ConfData =  {
-                s_FldDevName        : 'Alpaca Rotator Simulator',
-                s_FldDevType        : 'Rotator',
-                s_FldDevNum         : 0,
-                s_FldUniqId         : "5897B4BC-2A4D-4893-8CC0-6A440D6B2D51"
-            }
+ConfData = []
+for i in RotatorAPI.rRot:
+    confi = {
+        s_FldDevName        : 'Alpaca Rotator Simulator',
+        s_FldDevType        : 'Rotator',
+        s_FldUniqId         : "5897B4BC-2A4D-4893-8CC0-6A440D6B2D51"
+        }   
+    confi[s_FldDevNum] = i
+    ConfData.append(confi)
 
 @api.route('/v1/configureddevices', methods=['GET']) 
 @api.response(400, shr.s_Resp400Missing, m_ErrorMessage)

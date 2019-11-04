@@ -15,7 +15,7 @@
             <ul>
            	   	<li><a href="/">Home</a></li>
            	   	<li><a href="/setup">Server Setup</a></li>
-               	<li><a href="/setup/v1/rotator/0/setup">Device 0 Setup</a></li>
+               	<li><a href="/setup/v1/rotator/0/setup">Device Setup</a></li>
             </ul>
         </div>
      </div>
@@ -31,35 +31,36 @@
            	<div class="main_body">
 				{% block content %}
 				<div class="formwrapper">
-						
-					<p>Yes, this is an ugly thing. It's an example after all, so simple.</p>
-			
-					<form method=post>
-			
-						{{ form.hidden_tag() }}  <!-- CSRF protection with SECRET_KEY -->
-			
-						<div class="reverse">
-							{{ form.reverse() }} {{ form.reverse.label }}
-						</div><br />
-			
-						<div class="step_size">
-							{{ form.step_size(placeholder='1.0') }} {{ form.step_size.label }}
-							{% if form.step_size.errors %}
-							<ul class="errors">{% for error in form.step_size.errors %}<li>{{ error }}</li>{% endfor %}</ul>
-							{% endif %}
-						</div><br />
-			
-						<div class="steps_sec">
-							{{ form.steps_sec(placeholder='15') }} {{ form.steps_sec.label }}
-							{% if form.steps_sec.errors %}
-							<ul class="errors">{% for error in form.steps_sec.errors %}<li>{{ error }}</li>{% endfor %}</ul>
-							{% endif %}
-						</div><br />
-			
-						<div class="update">
-							<input id="update" type="submit" value="Submit">
-						</div>
-					</form>
+								
+                    <form method=post>
+
+                        {{ form.hidden_tag() }}  <!-- CSRF protection with SECRET_KEY -->
+
+                        <div class="step_size">
+                            {{ form.step_size(placeholder='1.0') }} {{ form.step_size.label }}
+                            {% if form.step_size.errors %}
+                            <ul class="errors">{% for error in form.step_size.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
+                        </div><br />
+
+                        <div class="steps_sec">
+                            {{ form.steps_sec(placeholder='15') }} {{ form.steps_sec.label }}
+                            {% if form.steps_sec.errors %}
+                            <ul class="errors">{% for error in form.steps_sec.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
+                        </div><br />
+
+                        <div class="reverse">
+                            {{ form.reverse() }} {{ form.reverse.label }}
+                            {% if form.reverse.errors %}
+                            <ul class="errors">{% for error in form.reverse.errors %}<li>{{ error }}</li>{% endfor %}</ul>
+                            {% endif %}
+                        </div><br />
+
+                        <div class="update">
+                            <input id="update" type="submit" value="Update">
+                        </div>
+                    </form>
 				</div>
 			
 				{% for message in get_flashed_messages() %}

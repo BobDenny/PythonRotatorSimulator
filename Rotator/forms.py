@@ -3,9 +3,10 @@
 # NOTE: Ues the thin wrapper/helper Flask-WTF. Recommended for CSRF protection 
 # and convenience/simplification running WTF in Flask.
 
-from wtforms import Form, BooleanField, IntegerField, FloatField, validators, SubmitField
+from wtforms import Form, BooleanField, IntegerField, FloatField, SubmitField, SelectField, validators
 from wtforms.validators import ValidationError, DataRequired, NumberRange
 from flask_wtf import FlaskForm     # *** NOTE THIS ***
+import RotatorAPI
 
 class DevSetupForm(FlaskForm):
 
