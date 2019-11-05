@@ -43,32 +43,34 @@ class svrsetup(Resource):
     @api.doc(description='Primary browser web page for the overall collection of devices. ' +
                          'To access this use the <a href=\'/setup\'>HTML Interface</a>, not this Swagger UI')
     def get(self):
-        setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST
+        setup_form = SvrSetupForm()
+        response = make_response(render_template('/svrsetup.html', 
+                    form=setup_form, 
+                    template='form_page',
+                    title='Settings for the Server',
+                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
+                    rDev=RotatorAPI.rRot))
         #
         # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
         # Swagger UI for the HTML Setup endpoints, so I needed to force the 
         # content-type over to text/html.  (typ.)
         #
-        response = make_response(render_template('/svrsetup.html', 
-                    form=setup_form, 
-                    template='form_page',
-                    title='Rotator Simulator Server Setup Form'))
         response.headers['Content-Type'] = 'text/html'
         return response
 
     @api.doc(description='Primary browser web page for the overall collection of devices. ' +
                          'To access this use the <a href=\'/\'>HTML Interface</a>, not this Swagger UI')
     def post(self):
-        setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST
+        setup_form = SvrSetupForm()                         # FlaskForm auto-loads the form from a POST (typ.)
         response = make_response(render_template('/svrsetup.html', 
                     form=setup_form, 
                     template='form_page',
-                    title='Rotator Simulator Server Setup Form'))
+                    title='Server Settings'))
         response.headers['Content-Type'] = 'text/html'
         return response
 
 
-from forms import DevSetupForm                             # Provides web-based setup UI for the rotator device
+from forms import DevSetupForm                             # Provides web-based setup UI for a rotator device
 @api.route('/setup/v1/rotator/<int:DeviceNumber>/setup', methods=['GET', 'POST'])
 @api.param(shr.s_FldDevNum, shr.s_DescDevNum, 'path', type='integer', default='0')
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
@@ -80,19 +82,17 @@ class devsetup(Resource):
         if not DeviceNumber in RotatorAPI.rRot:
             abort(400, shr.s_Resp400NoDevNo)
         rotDev = RotatorAPI.RotDev[DeviceNumber]
-        setup_form = DevSetupForm()                            # FlaskForm auto-loads the form from a POST
+        setup_form = DevSetupForm()
         setup_form.reverse.data = rotDev.reverse
         setup_form.step_size.data = rotDev.step_size
         setup_form.steps_sec.data = rotDev.steps_per_sec
-        #
-        # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
-        # Swagger UI for the HTML Setup endpoints, so I needed to force the 
-        # content-type over to text/html.  (typ.)
-        #
         response = make_response(render_template('/devsetup.html', 
                     form=setup_form, 
                     template='form_page',
-                    title='Rotator Simulator Device Setup Form'))
+                    title='Settings for Rotator #' + str(DeviceNumber),
+                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
+                    rDev=RotatorAPI.rRot,
+                    sDev=DeviceNumber))
         response.headers['Content-Type'] = 'text/html'
         return response
 

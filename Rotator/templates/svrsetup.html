@@ -9,18 +9,30 @@
 
 <body>
     <div id="page">
-      <div id="pagetop">
-		<h1>Alpaca Rotator Simulator</h1>
-        <div class="links">    	
-            <ul>
-           	   	<li><a href="/">Home</a></li>
-           	   	<li><a href="/setup">Server Setup</a></li>
-               	<li><a href="/setup/v1/rotator/0/setup">Device 0 Setup</a></li>
-            </ul>
+        <div id="pagetop">
+            <h1>Alpaca Rotator Simulator</h1>
+            <div class="links">
+                <ul>
+                    <!-- WTF? The list items display in reverse order along the top -->
+                    <li>
+                        {% if nDev > 1 %}
+                            <a href="#javascript">Rotator Setup&nbsp;</a>
+                            <select id="seldev">
+                                {% for i in rDev %}
+                                <option value="{{i}}">{{i}}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <a href="/setup/v1/rotator/0/setup">Rotator Setup</a>
+                        {% endif %}
+                    </li>
+                    <li><a href="/setup">Server Setup</a></li>
+                    <li><a href="/">Home</a></li>
+                </ul>
+            </div>
         </div>
-     </div>
         
-        <div id="header">   Insert slogan here, or leave it blank.     </div>
+        <div id="header">Nothing special for this simulator</div>
   
 <div id="main">
 	<div class="content">
@@ -31,11 +43,12 @@
            	<div class="main_body">
 				{% block content %}
 				<div class="formwrapper">
-					<p>
-						This is the form you would use to set up cross-cutting / server-level configuration items.
-						For example you could configure the IPaddress(es) and port(s) on which the server answers, enable
-						and disable individual devices provided through the server, etc.
-					</p>
+                    <p>
+                        There are {{nDev}} Rotator devices provided by this simulator. This is the form you 
+                        would use to set up cross-cutting / server-level configuration items. For example 
+                        you could configure the IPaddress(es) and port(s) on which the server answers, enable
+                        and disable individual devices provided through the server, etc.
+                    </p>
 			
 					<form method=post>
 			

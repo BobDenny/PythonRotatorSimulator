@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
 	<title>{{title}}</title>
@@ -9,18 +9,29 @@
 
 <body>
     <div id="page">
-      <div id="pagetop">
-		<h1>Alpaca Rotator Simulator</h1>
+        <div id="pagetop">
+	    <h1>Alpaca Rotator Simulator</h1>
         <div class="links">    	
-            <ul>
-           	   	<li><a href="/">Home</a></li>
-           	   	<li><a href="/setup">Server Setup</a></li>
-               	<li><a href="/setup/v1/rotator/0/setup">Device 0 Setup</a></li>
+            <ul>    <!-- WTF? The list items display in reverse order along the top -->
+                <li>
+                    {% if nDev > 1 %}
+                        <a href="#javascript">Rotator Setup&nbsp;</a>
+                        <select id="seldev">
+                            {% for i in rDev %}
+                            <option value="{{i}}">{{i}}</option>
+                            {% endfor %}
+                        </select>
+                    {% else %}
+                        <a href="/setup/v1/rotator/0/setup">Rotator Setup</a>
+                    {% endif %}
+                </li>
+                <li><a href="/setup">Server Setup</a></li>
+                <li><a href="/">Home</a></li>
             </ul>
         </div>
      </div>
         
-        <div id="header">   General Information </div>
+        <div id="header">General Information</div>
   
 <div id="main">
 	<div class="content">
@@ -29,7 +40,7 @@
             </div>
             
            	<div class="main_body">
-                <p>This is the main user page for a demonstration ASCOM Alpaca rotator simulator. Besides implementing the ASCOM Alpaca Rotator and Management APIs, it also provides live Swagger UI pages with which you can exercise the capabilities: </p>
+                <p>This is the main user page for a demonstration ASCOM Alpaca rotator simulator. Besides implementing {{nDev}} ASCOM Alpaca Rotator(s) and the Management API, it also provides live Swagger UI pages with which you can exercise the capabilities: </p>
 				<h2><a href="/html" target="_new">HTML/Web Server and Device Setup Services</a></h2>
 				<h2><a href="/management" target="_new">Alpaca Management API (Server Level)</a></h2>
 				<h2><a href="/api/v1/rotator" target="_new">Rotator Device API (Device Level)</a></h2>

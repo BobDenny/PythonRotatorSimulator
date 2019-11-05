@@ -108,11 +108,16 @@ app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so
 # ----------
 # Index page 
 # ----------
+# Rendering depends on the RotatorAPI being initialized 
+# But it must cone forst to avoid having / overridden
+#
 @app.route('/')             # Must precede others or won't be recognized
 def index():
     return render_template('/index.html',
-                    title='Alpaca Simulator (Python 3 / Flask)')
-
+                    title='Alpaca Rotator Simulator (Python 3 / Flask)',
+                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
+                    rDev=RotatorAPI.rRot)
+# -----------------
 # Register our APIs
 # -----------------
 app.register_blueprint(RotatorAPI.rot_blueprint)
