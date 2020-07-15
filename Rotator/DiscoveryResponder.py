@@ -1,6 +1,8 @@
 # =======================
 # DISCOVERY API RESPONDER
 # =======================
+# 15-Jul-2020   rbd     Final V4-only discovery responder. IPV6 would be in another
+#                       thread. 
 import os
 import socket                                           # for discovery responder
 from threading import Thread                            # Same here
@@ -30,6 +32,6 @@ class DiscoveryResponder(Thread):
             data, addr = self.sock.recvfrom(1024)
             datascii = str(data, 'ascii')
             print('Disc rcv ' + datascii + ' from ' + str(addr))
-            if 'alpaca discovery' in datascii:    
+            if 'alpacadiscovery1' in datascii:    
                 self.sock.sendto(self.alpaca_response.encode(), addr)
 

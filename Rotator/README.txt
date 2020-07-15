@@ -1,8 +1,10 @@
 ASCOM Alpaca Rotator Simulator in Python
 ----------------------------------------
 
-Version: 0.6 (01-Nov-2019)
-* Majoe refactoring and addition of functionality including discovery and Management API. 
+Version: 0.7 (15-Jul-2020)
+* Refactoring and addition of functionality including discovery and Management API. 
+* Final discovery responser (IPV4 only)
+
 By: Bob Denny <rdenny@dc3.com>
 
 This ASCOM Alpaca Standard Rotator simulator will run on Python 3.5 or later (and probably some earlier Python 3s and probably on Python 2.7 as well). 
@@ -15,7 +17,7 @@ Installation and Test
 So on the target device, use PIP3 to install the packages listed in requirements.txt. Some of them are dependencies so you may only need to install
 
 * Flask
-* Flask-RESTPlus
+* Flask-RESTX
 * WTForms (plural)
 * Flask-WTF
 * gevent (this is huge, and is for the production web server WSGIServer)

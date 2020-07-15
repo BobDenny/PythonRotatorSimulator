@@ -1,9 +1,10 @@
 # ==========================
 # ALPACA HTML MANAGEMENT API
 # ==========================
+# 15-Jul-2020   rbd     Flask-RestPlus is dead -> Flask-RestX
 
 from flask import Flask, Blueprint, request, abort, render_template, make_response, flash
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 import RotatorAPI
 import shr
 
@@ -12,7 +13,7 @@ html_blueprint = Blueprint('Setup', __name__,
                       static_folder='static')
 
 #
-# Set up the  Flask-RESTPlus api for Setup and use the above 
+# Set up the  Flask-RESTX api for Setup and use the above 
 # blueprint to establish the endpoint prefix.
 #
 api = Api(default='',
@@ -51,7 +52,7 @@ class svrsetup(Resource):
                     nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
                     rDev=RotatorAPI.rRot))
         #
-        # Maybe there's a better way, but I wanted Flask-RESTPlus to make the
+        # Maybe there's a better way, but I wanted Flask-RESTX to make the
         # Swagger UI for the HTML Setup endpoints, so I needed to force the 
         # content-type over to text/html.  (typ.)
         #
@@ -90,7 +91,7 @@ class devsetup(Resource):
                     form=setup_form, 
                     template='form_page',
                     title='Settings for Rotator #' + str(DeviceNumber),
-                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
+                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff (typ)
                     rDev=RotatorAPI.rRot,
                     sDev=DeviceNumber))
         response.headers['Content-Type'] = 'text/html'
@@ -111,6 +112,9 @@ class devsetup(Resource):
         response = make_response(render_template('/devsetup.html', 
                     form=setup_form, 
                     template='form_page',
-                    title='Rotator Simulator Device Setup Form'))
+                    title='Settings for Rotator #' + str(DeviceNumber),
+                    nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
+                    rDev=RotatorAPI.rRot,
+                    sDev=DeviceNumber))
         response.headers['Content-Type'] = 'text/html'
         return response

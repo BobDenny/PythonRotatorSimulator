@@ -1,9 +1,10 @@
 # ==========================
 # ALPACA JSON MANAGEMENT API
 # ==========================
+# 15-Jul-2020   rbd     FLask-RestPlus is dead -> Flask-RestX
 
 from flask import Flask, Blueprint, request, abort
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 import shr
 import RotatorAPI
 
@@ -12,7 +13,7 @@ mgmt_blueprint = Blueprint('Management', __name__,
                       static_folder='static')
 
 #
-# Set up the  Flask-RESTPlus api for Management and use the above 
+# Set up the  Flask-RESTX api for Management and use the above 
 # blueprint to establish the endpoint prefix.
 #
 api = Api(default='management', 

@@ -1,9 +1,10 @@
 # ==================
 # ALPACA ROTATOR API
 # ==================
+# 15-Jul-2020   rbd     FLask-RestPlus is dead -> Flask-RestX
 
 from flask import Flask, Blueprint, request, abort
-from flask_restplus import Api, Resource, fields
+from flask_restx import Api, Resource, fields
 import ASCOMErrors                                      # All Alpaca Devices
 import shr
 
@@ -27,7 +28,7 @@ rot_blueprint = Blueprint('Rotator', __name__,
                       static_folder='static')
 
 #
-# Set up the  Flask-RESTPlus api for Rotator and use the above 
+# Set up the  Flask-RESTX api for Rotator and use the above 
 # blueprint to establish the endpoint prefix.
 #
 api = Api(default='rotator', 

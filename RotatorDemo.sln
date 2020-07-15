@@ -9,6 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		..\Flask 1.1 Documentation.pdf = ..\Flask 1.1 Documentation.pdf
 		..\Flask-RESTPlus 0.13 Documentation.pdf = ..\Flask-RESTPlus 0.13 Documentation.pdf
+		C:\Users\Robert B. Denny\Desktop\Flask-RESTX 0.2.1.dev documentation.url = C:\Users\Robert B. Denny\Desktop\Flask-RESTX 0.2.1.dev documentation.url
 		..\Flask-WTF Interface 0.14.2 Documentation.pdf = ..\Flask-WTF Interface 0.14.2 Documentation.pdf
 		..\Jinja Templates 2.10 Documentation.pdf = ..\Jinja Templates 2.10 Documentation.pdf
 		..\WTForms Crash Course.pdf = ..\WTForms Crash Course.pdf

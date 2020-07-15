@@ -28,15 +28,18 @@
 # 01-Nov-2019   rbd Version 0.6 (cont) Correct Swagger 200 decscriptions on all GET methods in the 
 #                   Rotator API. Implement JSON Management API. Pick up stray cosmetics. Start 
 #                   HTML Browser UI
+# 15-Jul-2020   rbd Version 0.7 Changes needed to migrate from the now dead Flask-RestPlus to the
+#                   "drop-in-replacement" Flask-RestX. 
 # =================================================================================================
 
 # ===============================
 # https://ascom-standards.org/api
 # ===============================
 #
-# References for the Flask web service and Flask-REST-Plus framework
+# References for the Flask web service and Flask-REST-X framework
 #       http://flask.pocoo.org/docs/1.0/
-#       https://flask-restplus.readthedocs.io/en/stable/index.html
+#       https://github.com/python-restx/flask-restx
+#       https://flask-restx.readthedocs.io/en/latest/
 # Strongly recommended Flask training, free, concise, and easy to understand.
 # See the Building Flask Apps table of contents right under the main graphic.
 #       https://hackersandslackers.com/creating-your-first-flask-application/
@@ -102,7 +105,7 @@ app = Flask(__name__, static_url_path='', static_folder='static', template_folde
 app.config['FLASK_ENV'] = 'development'
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'we-did-it-for-harambe'
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
-app.config['RESTPLUS_MASK_SWAGGER'] = False         # Not used in our device, so hide this from Swagger
+app.config['RESTX_MASK_SWAGGER'] = False            # Not used in our device, so hide this from Swagger (??RESTX??)
 
 
 # ----------
