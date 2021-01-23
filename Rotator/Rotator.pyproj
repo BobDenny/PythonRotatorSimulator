@@ -55,8 +55,6 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="README.txt" />
-    <Content Include="requirements.txt" />
     <Content Include="static\AlpacaLogo128.png" />
     <Content Include="static\background.png" />
     <Content Include="static\content_back.png" />

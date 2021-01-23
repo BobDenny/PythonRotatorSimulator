@@ -58,7 +58,12 @@
 
 import os
 from flask import Flask, Blueprint, request, render_template
-from gevent.pywsgi import WSGIServer
+
+# ----------------------
+# Production server only
+# ----------------------
+# Uncomment if using gevent/WSGIServer, see the SERVER APPLICAITION section below
+#from gevent.pywsgi import WSGIServer                    # 
 
 import ASCOMErrors                                      # All Alpaca Devices
 
@@ -66,15 +71,13 @@ import shr                                              # Thread-safe shared var
 shr.init()
 
 # -----------------
-#Network Connection
+# Network Connection
 # ----------------
-if os.name == 'nt':                                     # This is really Windows (my dev system eh?)
-    HOST = '127.0.0.1'
-    print(' * Running on Windows... ' + HOST)
-else:
-    HOST = '192.168.0.40'                               # Unbelievable what you need to do to get your live IP address on Linux (which one????)
-    print(' * Assuming run on Raspberry Pi Linux ' + HOST)
+HOST = '192.168.0.40'                                   # Unbelievable what you need to do to get your live IP address on Linux (which one????)
 PORT = 5555                                             # Port on which Alpaca interface(s) respond
+
+print(' * Simulator accessible via Alpaca at ' + HOST + ':' + str(PORT))
+print('   For mangement home page http://' + HOST + ':' + str(PORT) + '/')
 
 # -------------------
 # Discovery responder
