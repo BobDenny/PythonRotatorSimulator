@@ -1,10 +1,7 @@
 ASCOM Alpaca Rotator Simulator in Python
 ----------------------------------------
 
-Version: 0.7 (15-Jul-2020)
-* Refactoring and addition of functionality including discovery and Management API. 
-* Final discovery responser (IPV4 only)
-
+Version: 0.8 (23-Jan-2021)
 By: Bob Denny <rdenny@dc3.com>
 
 This ASCOM Alpaca Standard Rotator simulator will run on Python 3.5 or later (and probably some earlier Python 3s and probably on Python 2.7 as well). 
@@ -26,7 +23,7 @@ After doing these, look and see what else you might need to complete the package
 
 (2) Create the Python application in a folder: Create a folder (e.g.) Rotator. Then copy the contents of the ZIP file (except requirements.txt and README.txt) into that folder. There  will be 'static' and 'templates' subfolders.
 
-(3) Edit app.py. Scroll to "Network Connection" area (about line 66) and change the IP address 192.168.0.40 to whatever IP address your lightweight device (Raspberry Pi or whatever) is on. Maybe you'll want to change the port 5555 to something else. 
+(3) Edit app.py. Scroll to "Network Connection" area (about line 70) and change the IP address 192.168.0.40 to whatever IP address your lightweight device (Raspberry Pi or whatever) is on. Maybe you'll want to change the port 5555 to something else. 
 
 (4) If needed open the firewall on your system to accept inbound connections on port 5555
 
@@ -64,5 +61,5 @@ PLEASE NOTE
 -----------
 I'm no Linux expert, no Python expert, and no Flask expert. This whole project was one big "just in time learning" exercise. What I know is that it is easy to get the Python packages into a screwed up state, mix up Python 2 vs 3, and other issues. If you get errors "module not found" on the Raspberry Pi after starting app.py with pip3, you can be sure you didn't install some or all module(s) with the pip3 command. If your installation can support "virtual environments" then that's good. Use requirements.txt as a guide. I had no problems at all, but I have run into problems in the past on other projects with package versions and dependencies. Your chances of success are very high though. What I cannot do is help you solve problems with the Python stuff, nor Linux things like directory permissions, paths, strange ENVVAR side-effects, etc. Under the right conditions this rotator simulator will work. 
 
-  Bob Denny - 17-Mar-2019
+  Bob Denny - 23-Jan-2021
   

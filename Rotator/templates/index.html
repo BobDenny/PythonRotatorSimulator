@@ -5,30 +5,36 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 	<link rel="stylesheet" type="text/css" href="style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <script type="text/javascript">
+        function selectChanged(value) {
+            document.getElementById("setupUrl").href = "/setup/v1/rotator/" + value + "/setup";
+        }
+    </script>
 </head>
 
 <body>
     <div id="page">
         <div id="pagetop">
-	    <h1>Alpaca Rotator Simulator</h1>
-        <div class="links">    	
-            <ul>    <!-- WTF? The list items display in reverse order along the top -->
-                <li>
-                    {% if nDev > 1 %}
-                        <a href="#javascript">Rotator Setup&nbsp;</a>
-                        <select id="seldev">
-                            {% for i in rDev %}
-                            <option value="{{i}}">{{i}}</option>
-                            {% endfor %}
-                        </select>
-                    {% else %}
-                        <a href="/setup/v1/rotator/0/setup">Rotator Setup</a>
-                    {% endif %}
-                </li>
-                <li><a href="/setup">Server Setup</a></li>
-                <li><a href="/">Home</a></li>
-            </ul>
-        </div>
+	        <h1>Alpaca Rotator Simulator</h1>
+            <div class="links">    	
+                <ul>    
+                    <!-- WTF? The list items display in reverse order along the top -->
+                    <li>
+                        {% if nDev > 1 %}
+                            <a id="setupUrl" href="/setup/v1/rotator/0/setup">Rotator Setup&nbsp;</a>
+                            <select id="seldev" onchange="selectChanged(this.value);">
+                                {% for i in rDev %}
+                                <option value="{{i}}">{{i}}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <a href="/setup/v1/rotator/0/setup">Rotator Setup</a>
+                        {% endif %}
+                    </li>
+                    <li><a href="/setup">Server Setup</a></li>
+                    <li><a href="/">Home</a></li>
+                </ul>
+            </div>
      </div>
         
         <div id="header">General Information</div>
@@ -50,7 +56,7 @@
             <div class="clear">&nbsp;</div>
         </div>
 		<div id="footer">
-        	<p>Testing 1 2 3</p>
+        	<p>{{verFooter}}</p>
 		</div>        
     </div>
 </body>

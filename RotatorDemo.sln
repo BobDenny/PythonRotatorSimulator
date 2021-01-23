@@ -5,16 +5,6 @@ VisualStudioVersion = 16.0.29424.173
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "Rotator", "Rotator\Rotator.pyproj", "{0F5069BC-E86E-4A90-9A09-0EE6E6EC068A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{981CB1D7-9FCD-4806-8988-9C90EBC84F1A}"
-	ProjectSection(SolutionItems) = preProject
-		..\Flask 1.1 Documentation.pdf = ..\Flask 1.1 Documentation.pdf
-		..\Flask-RESTPlus 0.13 Documentation.pdf = ..\Flask-RESTPlus 0.13 Documentation.pdf
-		C:\Users\Robert B. Denny\Desktop\Flask-RESTX 0.2.1.dev documentation.url = C:\Users\Robert B. Denny\Desktop\Flask-RESTX 0.2.1.dev documentation.url
-		..\Flask-WTF Interface 0.14.2 Documentation.pdf = ..\Flask-WTF Interface 0.14.2 Documentation.pdf
-		..\Jinja Templates 2.10 Documentation.pdf = ..\Jinja Templates 2.10 Documentation.pdf
-		..\WTForms Crash Course.pdf = ..\WTForms Crash Course.pdf
-	EndProjectSection
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

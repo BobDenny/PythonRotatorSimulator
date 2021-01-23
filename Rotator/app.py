@@ -30,6 +30,8 @@
 #                   HTML Browser UI
 # 15-Jul-2020   rbd Version 0.7 Changes needed to migrate from the now dead Flask-RestPlus to the
 #                   "drop-in-replacement" Flask-RestX. 
+# 23-Jan-2021   rbd Version 0.8 Add dynamic version footer to HTML setup pages. Make the select
+#                   dropdown for selecting which device to set up work (was stubbed out).
 # =================================================================================================
 
 # ===============================
@@ -107,19 +109,19 @@ app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY') or 'we-did-it-for-haramb
 app.config.SWAGGER_UI_DOC_EXPANSION = 'list'        # Open Swagger with list displayed by default
 app.config['RESTX_MASK_SWAGGER'] = False            # Not used in our device, so hide this from Swagger (??RESTX??)
 
-
 # ----------
 # Index page 
 # ----------
 # Rendering depends on the RotatorAPI being initialized 
-# But it must cone forst to avoid having / overridden
+# But it must come first to avoid having / overridden
 #
 @app.route('/')             # Must precede others or won't be recognized
 def index():
     return render_template('/index.html',
                     title='Alpaca Rotator Simulator (Python 3 / Flask)',
                     nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
-                    rDev=RotatorAPI.rRot)
+                    rDev=RotatorAPI.rRot,
+                    verFooter=shr.m_DriverVersion + ' ' + shr.m_DriverVerDate)
 # -----------------
 # Register our APIs
 # -----------------

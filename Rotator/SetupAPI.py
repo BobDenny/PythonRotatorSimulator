@@ -2,6 +2,7 @@
 # ALPACA HTML MANAGEMENT API
 # ==========================
 # 15-Jul-2020   rbd     Flask-RestPlus is dead -> Flask-RestX
+# 23-Jan-2021   rbd     0.8 Version strings for form footers etc now in shr module
 
 from flask import Flask, Blueprint, request, abort, render_template, make_response, flash
 from flask_restx import Api, Resource, fields
@@ -50,7 +51,8 @@ class svrsetup(Resource):
                     template='form_page',
                     title='Settings for the Server',
                     nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
-                    rDev=RotatorAPI.rRot))
+                    rDev=RotatorAPI.rRot,
+                    verFooter=shr.m_DriverVersion + ' ' + shr.m_DriverVerDate))
         #
         # Maybe there's a better way, but I wanted Flask-RESTX to make the
         # Swagger UI for the HTML Setup endpoints, so I needed to force the 
@@ -93,7 +95,8 @@ class devsetup(Resource):
                     title='Settings for Rotator #' + str(DeviceNumber),
                     nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff (typ)
                     rDev=RotatorAPI.rRot,
-                    sDev=DeviceNumber))
+                    sDev=DeviceNumber,
+                    verFooter=shr.m_DriverVersion + ' ' + shr.m_DriverVerDate))
         response.headers['Content-Type'] = 'text/html'
         return response
 
@@ -115,6 +118,7 @@ class devsetup(Resource):
                     title='Settings for Rotator #' + str(DeviceNumber),
                     nDev=RotatorAPI.nRot,                       # For Jinja to render the device stuff
                     rDev=RotatorAPI.rRot,
-                    sDev=DeviceNumber))
+                    sDev=DeviceNumber,
+                    verFooter=shr.m_DriverVersion + ' ' + shr.m_DriverVerDate))
         response.headers['Content-Type'] = 'text/html'
         return response
