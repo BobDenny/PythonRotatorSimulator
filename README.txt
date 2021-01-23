@@ -51,9 +51,9 @@ Along the top you should see links to the Server Setup and Device (Rotator) Setu
 
 At this point you should be able to use the Windows Conform tool to validate the correctness of the simulator. In Conform, set it for Rotator conformation then in the ASCOM Chooser enable ALpaca if needed and if you are on the same LAN segment recommended), let it discover this Rotator Simulator, then select it in the device list as the chosen device. Click Properties as usual, and if you didn't use discovery enter the IP address and port of the Pi. Close both windows. Now try to do a Conform check. 
 
-Feel free to connect to this from TheSky X on Windows and play with TheSky's Field of View Indicator. Set TheSky's Rotator for ASCOM Rotator. Do the ASCOM device setup in TheSky to get the ASCOM Rotator chooser again, and again fill out the IP and Port. Connect in TheSky and if all went well you'll see TheSky pollng the Rotator at a high rate. Play with it now.
+Feel free to connect to this from TheSky X on Windows and play with TheSky's Field of View Indicator. First, pick a FOVI and make certain (edit FOVI) that there is no East/West offset on the angle and that it is for the Center of the Chart. The setup is tricky as the rotator is part of the Camera setup. Set TheSky's Rotator for ASCOM Rotator. Do the ASCOM device setup in TheSky to get the ASCOM Rotator chooser again. making sure that it is still connected to the rotator simulator on the Pi. Connect the Rotator in TheSky and if all went well you'll see TheSky pollng the Rotator at a high rate. Play with it now. Use the Swagger API pages on the simulator as a way to move the rotator (moveabsolute) and watch it turn in TheSky, etc. NO MODIFICATIONS to TheSky needed!!
 
-KEEP IN MIND THAT THESE TESTS USE WINDOWS ONLY BECAUSE THERE ARE NOT YET ANY ALPACA ROTATOR CLIENTS so you're using ASCOM Remote to reach out beyond Windows to your Linux device. ALPACA AND THE ROTATOR SIMULATOR ARE NOT DEPENDENT ON WINDOWS!!!
+KEEP IN MIND THAT THESE TESTS USE WINDOWS ONLY BECAUSE THERE ARE NOT YET ANY ALPACA ROTATOR CLIENTS so you're using the Platform 6.5's automatic Alpaca Dynamic Driver feature to reach out beyond Windows to your Linux device. ALPACA AND THE ROTATOR SIMULATOR ARE NOT DEPENDENT ON WINDOWS!!!
 
 Working with this in Visual Studio 2019
 ---------------------------------------
