@@ -39,7 +39,7 @@
 # ===============================
 #
 # References for the Flask web service and Flask-REST-X framework
-#       http://flask.pocoo.org/docs/1.0/
+#       https://flask.palletsprojects.com/
 #       https://github.com/python-restx/flask-restx
 #       https://flask-restx.readthedocs.io/en/latest/
 # Strongly recommended Flask training, free, concise, and easy to understand.
@@ -73,7 +73,12 @@ shr.init()
 # -----------------
 # Network Connection
 # ----------------
-HOST = '192.168.0.40'                                   # Unbelievable what you need to do to get your live IP address on Linux (which one????)
+if os.name == 'nt':                                     # This is really Windows (my dev system eh?)
+    HOST = '127.0.0.1'
+    print(' * Running under Visual Studio for Development... ' + HOST)
+else:
+    HOST = '192.168.0.40'                               # Unbelievable what you need to do to get your live IP address on Linux (which one????)
+    print(' * Assuming run on Raspberry Pi Linux ' + HOST)
 PORT = 5555                                             # Port on which Alpaca interface(s) respond
 
 print(' * Simulator accessible via Alpaca at ' + HOST + ':' + str(PORT))

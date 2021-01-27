@@ -9,7 +9,7 @@ import ASCOMErrors
 # Driver Info
 # -----------
 m_DriverVersion = '0.8'                                 # Major.Minor only also used in form footers
-m_DriverVerDate = '23-Jan-2021'                         # Form footers
+m_DriverVerDate = '28-Jan-2021'                         # Form footers
 m_DriverAPIVersions = [1]                               # Supported API Versions
 
 

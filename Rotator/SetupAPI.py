@@ -3,6 +3,7 @@
 # ==========================
 # 15-Jul-2020   rbd     Flask-RestPlus is dead -> Flask-RestX
 # 23-Jan-2021   rbd     0.8 Version strings for form footers etc now in shr module
+# 17-Jan-2021   rbd     0.8 /setup endpoints are GET only (no POST)
 
 from flask import Flask, Blueprint, request, abort, render_template, make_response, flash
 from flask_restx import Api, Resource, fields
@@ -38,7 +39,7 @@ api.init_app(html_blueprint,
 m_ErrorMessage = api.model(shr.s_FldErrMsg, {shr.s_FldValue : fields.String(description=shr.s_DescErrMsg, required=True)})
 
 from forms import SvrSetupForm                              # Provides web-based setup UI for the server
-@api.route('/setup/', methods=['GET', 'POST'])              # The trailing / is vital
+@api.route('/setup/', methods=['GET'])              # The trailing / is vital
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class svrsetup(Resource):
 
@@ -74,7 +75,7 @@ class svrsetup(Resource):
 
 
 from forms import DevSetupForm                             # Provides web-based setup UI for a rotator device
-@api.route('/setup/v1/rotator/<int:DeviceNumber>/setup', methods=['GET', 'POST'])
+@api.route('/setup/v1/rotator/<int:DeviceNumber>/setup', methods=['GET'])
 @api.param(shr.s_FldDevNum, shr.s_DescDevNum, 'path', type='integer', default='0')
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class devsetup(Resource):
