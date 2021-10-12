@@ -2,14 +2,15 @@
 # Common strings and form functions
 #
 # 23-Jan-2021  rbd  V0.8 Common version strings for form footers, etc.
+# 10-Oct-2021  rbd  V0.9 Python 3.7, updatated packages.
 #
 import ASCOMErrors
 
 # -----------
 # Driver Info
 # -----------
-m_DriverVersion = '0.8'                                 # Major.Minor only also used in form footers
-m_DriverVerDate = '28-Jan-2021'                         # Form footers
+m_DriverVersion = '0.9'                                 # Major.Minor only also used in form footers
+m_DriverVerDate = '12-Oct-2021'                         # Form footers
 m_DriverAPIVersions = [1]                               # Supported API Versions
 
 
