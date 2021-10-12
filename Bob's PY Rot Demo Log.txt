@@ -1,0 +1,71 @@
+Picking up  this project July 2020. Unknown if I made any notes other than the ones in Bob's Pi 3 SystemLog.
+
+17-Jul-2020
+-----------
+* Tested Git Pull from the Pi, with the current directory set to the ~/RotatorDemo folder. 'git pull' and it worked!!
+* Now need to update all of the Python modules required for this thing, including installing flask_restx
+  - See the Bob's Pi 3 System log for the fun and games.....
+  
+23-Jan-2021
+-----------
+* Testing the Rotator Simulator:
+  - Started on Pi (Python3 app.py)
+  - Run Conform on the PC, select Rotator
+  - Use Chooser, Alpaca, create a driver. Discovery does not work across router, so...
+  - Manually set IP address 70.167.219.235 (router set up port forward to 192.168.0.40:5555)
+  - In the Chooser Test the two setup buttons in the lower right, server and device setup. They work (browser windows)
+  - Conform passes!!!
+  - The links to swagger etc also work - It looks great!!
+  - Regenerated requiremts.txt on the PC under VS2019
+  - Commit/push to private Git repo on svn.dc3.com
+  - Git Pull from the Pi, with the current directory set to the ~/RotatorDemo folder. 'git pull' and it worked!!
+* Work on the setup forms. 
+  - The footer "testing 123" should be a version and date - FIXED
+  - On the home page, the Rotator Setup link and the device number droplist don't work together (yet) - FIXED
+  - Got the droplist working including initial value coming into the dev setup page. FIXED
+  - Conform OK
+  
+12-Oct-2021
+-----------
+* Back at it again. I deleted the distribution folder after thinking it was the dev one ha ha. Starting from 'Rotator Demo'
+* One thing that I need to get tattooed on my arm: python.exe -m pip install --upgrade pip
+* Much of my log is contained in the Raspberry Pi 3 System Log (shortcut here) but now I am on the Pi 4B with VSCode
+* Switching to Raspberry Pi 4 #1 (the 64bit Buster). MAIN DEV STILL ON VO2019 WINDOWS THOUGH
+* ON VS2019: Loaded and upgraded all of the packages. While doing this I noticed some wierd messages:
+    WARNING: Ignoring invalid distribution -tforms (d:\dev\astro\ascom alpaca\rotatordemo\rotator\env\lib\site-packages)
+Well I also noticed that the Requirements.txt from Jan 2019 had a package -tforms which choked the upgrades. Those ~xxx folders in the site-packages folder appear to be a result of incomplete packge updates or installs. Just delete them
+* VS Python Environments > Packages (PyPI) says jsonschema (3.2.0) has an update 4.1.0 available but then "ERROR: Could not find a version that satisfies the requirement jsonschema==4.1.0 (from versions: 0.1a0, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8.0, 1.0.0, 1.1.0, 1.2.0, 1.3.0, 2.0.0, 2.1.0, 2.2.0, 2.3.0, 2.4.0, 2.5.0, 2.5.1, 2.6.0, 3.0.0a1, 3.0.0a2, 3.0.0a3, 3.0.0a4, 3.0.0a5, 3.0.0a6, 3.0.0b1, 3.0.0b2, 3.0.0b3, 3.0.0, 3.0.1, 3.0.2, 3.1.0, 3.1.1, 3.2.0, 4.0.0a1, 4.0.0a2, 4.0.0a3, 4.0.0a4, 4.0.0a5, 4.0.0a6, 4.0.0)"
+* Tried removing jsonschema then installing again and it found the 3.2.0 and immediately said gain to update to 4.1.0. ?!?!?! THen I tried to have it install "jsonschema 4" aand it installed a package "4"  (8.8.8.80 HA HA HA!!
+* Maybe the VS2019/Win needs to switch to Python 3.7? How to do that nicely?
+== GOING TO PYTHON 3.7 ==
+   1. Found in Python Environments that a bare bones Python 3.7 is already installed. 
+   2. Create new Virtual ENvironment 'rotator-demo' for Python 3.7 from newly made requirements.txt (from new 3.6 one I just made) THis is starting to make some sense.
+   3. FAILED ERROR: 
+      Could not find a version that satisfies the requirement dataclasses==0.8 (from -r D:\dev\astro\ASCOM     Alpaca\RotatorDemo\Rotator\requirements.txt (line 6)) (from versions: 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
+      ERROR: No matching distribution found for dataclasses==0.8 (from -r D:\dev\astro\ASCOM Alpaca\RotatorDemo\Rotator\requirements.txt (line 6))
+   4. Upgrade the pip and setuptools in the new rotator-demo venv (that's all that was in there)
+   5. SHIT!! Chicken and egg problem. Will not create the venv from requirements, yet the pip in there is old, where did it get that????
+   6. Now you know why I get asick of  this shit quickly.
+   7. Go to the global 3.7 environment and upgrade pip and setuptools. Remove pywin for now.
+   8. SHIT the Add Environment using 3.7 still reports old PIP yet it is upgraded in the 3.7 virt env. WTF!!!!!!!!!!!!! Now what??
+   9. Maybe upgrade from wihin VS terminal -- NOPE terminal briefly shows PoserSHell then vaporizes without a trace. GOD DAMN IT!
+   10. Old sachool open 65 bit shell to C:\Program Files (x86)\Microsoft Visual Studio\Shared\Python37_64\ the path of the 3.7 virtenv
+   11 FUCK! THAT ALSO SAYS I AM ON 21.3. WHAT THE FUCK IS ADD ENVIRONMENT USING??????????????
+   12. AH! I found right-clicking the partially created environment in the Solution Explorer has "Install from Requirements.txt" which will ADD to an existing env. SO the failed one contains the fucking old pip. I upgraded it. Then I did "Install from requirements.txt". Failed again on dataclasses=0.8.
+   13. Edit requirements.txt to change to 0.6 === HOORAY I HAVE THE 3.7 VIRT ENV ===
+   14. Amazingly now with 3.7 and the current PIP I can update jsonschema to 4.1.0. No luck on dataclasses 0.8 only 0.6.
+== LESSONS LEARNED ==
+* YOu can crate a clean virt env with just pip and setuptools.
+* After doing this, go  in and update pip and setuptools as indicated
+* THEN you can add packages via a requirements.txt
+**** IT WORKS ****
+
+
+   
+   
+   
+   
+
+
+
+
