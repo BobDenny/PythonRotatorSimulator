@@ -37,7 +37,8 @@
 * Damn linted the  whole thing with just # pylint: disable=C0301,C0103,C0111 and one W0612 Variables devno, cid defined for 
   illustration but not used in RotatorAPI.py.
 * Test with TheSky -> ASCOM Remote Driver. Fail on the __init__ method for the base class dict. Lint called it out (shr.py). 
-  Research needed here. 
+  Research needed here. OY!! So simple dict.__init__(self) -- the key  being 'self' argument. More just-in-time learning.
+
 
 
 

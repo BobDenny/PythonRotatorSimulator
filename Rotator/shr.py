@@ -81,7 +81,7 @@ def get_form_caseless(name, form, default):
 #
 class PropertyResponse(dict):
     def __init__(self, value, args, err = ASCOMErrors.Success):
-        #dict.__init__()
+        dict.__init__(self)
         self.ServerTransactionID = getNextTransId()
         self.Value = value
         ctid = get_args_caseless(s_FldCtId, args, 1)
@@ -98,7 +98,7 @@ class PropertyResponse(dict):
 #
 class MethodResponse(dict):
     def __init__(self, form, err = ASCOMErrors.Success):
-        #dict.__init__()
+        dict.__init__(self)
         self.ServerTransactionID = getNextTransId()
         ctid = get_args_caseless(s_FldCtId, form, 1)
         if not ctid is None:
