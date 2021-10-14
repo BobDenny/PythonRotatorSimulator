@@ -1,0 +1,43 @@
+12-Oct-2021
+-----------
+* Following MS code.visualsudio.com/docs/python/environments#_create-a-virtual-environment <-- MUST SAVE THIS URL!!!!
+  1. VSCode Terminal -> Install globally python3-venv (was already there)
+  2. Read the Python info at https://docs.python.org/3/library/venv.html
+  3. VSCode Terminal (already in the ~/RotatorDemo folder) Created the .venv virtual environment via python3 -m venv .venv ... 
+     and it appeared in the left pane. within the opened folder. Cool. Then the popup appeared asking if I want to select it 
+     for the workspace folder. Yes. But ... in the terminal 'which python3' reports /usr/bin/python3. So now what? Apparently
+     the "Python Extension" will use this but not the terminal. More learning ahead.
+  4. Command Palette: Ctrl-Shift-P -> python: Select Interpreter -> Select the one that has the .venv specified.
+  5. BooYah!! Close out the terminal and open a new one. Now it plainly shows that the terminal is running in the VE.
+  6. No more python3, 'which python' returns /home/pi/RotatorDemo/.venv/bin/python YEAH!!
+  7. First task, upgrade the local pip from 18.1 to the current 21.2 'TATTOO INCANTATION' python -m pip install --upgrade pip
+     Surprising result: Cache entry deserialization failed, entry ignored, but, 
+     Using cached https://files.pythonhosted.org/packages/90/a9/1ea3a69a51dcc679724e3512fc2aa1668999eed59976f749134eb02229c8/pip-21.3-py3-none-any.whl
+     net result is that my Pip is at 21.3, the current
+  8. Readin onward, Command Palette -> python: select linter -> pylint (no prompt to install, it must be there)
+  9. I still haven't installed the packages needed by this app. Is there a way to install per the requirements.txt?
+  10. Command Palette: python: run linting. No obvious feedback. So I need to open a .py file..... Well, I opened app.py, and 
+      immediately I got a popup that pylint is not installed. Go for it, yes. Tons of stuff got installed, a huge log of activity. 
+  11. Sure enough PyLint immediately flaged the packages that are not in my VE. How to do this from requirements?? 
+  12. Simple!! In the terminal window with ().venv) pip install -r requirements.txt -> success
+  13. Damn the requirements.txt is missing flask-restx. Fix it and install manually. -> GOT IT!!!!!
+* Try to run it by opening app.py in the editor and then Run menu -> Run without debugging. It starts and answers on http://192.168.0.42:5555/
+* But in the Problems section of the lower area, 29 problems (lint stuff) 
+* Note that PyLint runs when you save the file. Keep at it. Wait for the next run of shit.
+* Found missing module docstring. LOSER!!! Multiple tries with huge cryptic shit.  I tried pip install various forms. 
+  Still barfing. End of work. Oh doof! This hs a PyLint warning for missing documentation.
+* Linting, and now I want to suppress annoying 'info' level lint messages like line too long. How? Where is PyLint? Ah ha! It is 
+  installed into the virtual environment! Weird. /home/pi/RotatorDemo/.venv/bin/pylint and you can execute it in the VSCode
+  terminal while the workspace is loaded. I got the latest Feb '21 Pylint doc on GoodReader.  ~/.pylintrc seems to be the key.
+  The list of codes is at http://pylint-messages.wikidot.com/all-codes and I converted that to PDF and it is also on GoodReader.
+  (a) Test put # pylint disable=C0301 at the very top of the file, poof! Line too long gone.
+  (b) Use `pylint --generate-rcfile > ~/.pylintrc` then add to [MESSAGES CONTROL] disable= C0301 workspace
+  -- WILL DO BOTH, SO SOURCES ON THIS PROJECT ARE SELF-DOCUMENTING --
+* While linting shr.py, I got __init__ method from base class not called. Wow. 
+* Damn linted the  whole thing with just # pylint: disable=C0301,C0103,C0111 and one W0612 Variables devno, cid defined for 
+  illustration but not used in RotatorAPI.py.
+* Test with TheSky -> ASCOM Remote Driver. Fail on the __init__ method for the base class dict. Lint called it out (shr.py). 
+  Research needed here. 
+
+
+

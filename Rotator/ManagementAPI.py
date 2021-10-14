@@ -1,35 +1,37 @@
+# pylint: disable=C0301,C0103,C0111
 # ==========================
 # ALPACA JSON MANAGEMENT API
 # ==========================
-# 15-Jul-2020   rbd     FLask-RestPlus is dead -> Flask-RestX
+# 15-Jul-2020  rbd  FLask-RestPlus is dead -> Flask-RestX
+# 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
 
-from flask import Flask, Blueprint, request, abort
+from flask import Blueprint, request
 from flask_restx import Api, Resource, fields
 import shr
 import RotatorAPI
 
-mgmt_blueprint = Blueprint('Management', __name__, 
+mgmt_blueprint = Blueprint('Management', __name__,
                       url_prefix='/management',
                       static_folder='static')
 
 #
-# Set up the  Flask-RESTX api for Management and use the above 
+# Set up the  Flask-RESTX api for Management and use the above
 # blueprint to establish the endpoint prefix.
 #
-api = Api(default='management', 
+api = Api(default='management',
             default_label='<h2>ASCOM Alpaca Management API (JSON): Base URL = <tt>/management</tt>',
             contact='Bob Denny, DC-3 Dreams, SP',
             contact_email='rdenny@dc3.com',
             version='Exp. 1.0')
 
-api.init_app(mgmt_blueprint, 
+api.init_app(mgmt_blueprint,
             version = '1.0',
-            title='ASCOM Alpaca Management API (JSON)', 
-            description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>'+
-                '<img src=\'/static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>'+ 
+            title='ASCOM Alpaca Management API (JSON)',
+            description='<div><a href=\'https://ascom-standards.org/Developer/Alpaca.htm\' target=\'_new\'>' +
+                '<img src=\'/static/AlpacaLogo128.png\' align=\'right\' width=\'128\' height=\'101\' /></a>' +
                 '<h2>This API enables Alpaca devices to be managed</h2>\r\n' +
                 '<a href=\'https://ascom-standards.org/Developer/ASCOM%20Alpaca%20API%20Reference.pdf\' target=\'_new\'>' +
-                    'View the ASCOM Alpaca API Reference (PDF)</a><br /><br />\r\n' + 
+                    'View the ASCOM Alpaca API Reference (PDF)</a><br /><br />\r\n' +
                 '<a href=\'https://ascom-standards.org/api/?urls.primaryName=ASCOM%20Alpaca%20Management%20API\' target=\'_new\'>' +
                 'Try out the official live ASCOM Alpaca Management API (Swagger)</a><br /><br /></div>')
 
@@ -42,13 +44,13 @@ m_ErrorMessage = api.model(shr.s_FldErrMsg, {shr.s_FldValue : fields.String(desc
 # -----------------------------
 # For the /apiversions endpoint
 # -----------------------------
-m_IntArrayResponse  = api.model('IntArrayResponse', 
-                    {   shr.s_FldValue      : fields.List(fields.Integer, description='Array of integer values.', required=True),
-                        shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
-                        shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
-                        shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
-                        shr.s_FldErrMsg     : fields.String(description=shr.s_DescErrMsg)
-                    })
+m_IntArrayResponse  = api.model('IntArrayResponse',
+            {   shr.s_FldValue      : fields.List(fields.Integer, description='Array of integer values.', required=True),
+                shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
+                shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
+                shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
+                shr.s_FldErrMsg     : fields.String(description=shr.s_DescErrMsg)
+            })
 
 # --------------------------------
 # For the /v1/description endpoint
@@ -58,21 +60,21 @@ s_FldManuf      = 'Manufacturer'
 s_FldManufVers  = "ManufacturerVersion"
 s_FldLocation   = 'Location'
 
-m_Description       = api.model('Description', 
-                    {   
-                        s_FldSvrName        : fields.String(description='The device or server\'s overall name.'),
-                        s_FldManuf          : fields.String(description='The manufacturer\'s name.'),
-                        s_FldManufVers      : fields.String(description='The device or server\'s version number.'),
-                        s_FldLocation       : fields.String(description='The device or server\'s location.')
-                    })
+m_Description       = api.model('Description',
+            {
+                s_FldSvrName        : fields.String(description='The device or server\'s overall name.'),
+                s_FldManuf          : fields.String(description='The manufacturer\'s name.'),
+                s_FldManufVers      : fields.String(description='The device or server\'s version number.'),
+                s_FldLocation       : fields.String(description='The device or server\'s location.')
+            })
 
 m_DescriptionResponse = api.model('DescriptionResponse',
-                    {   shr.s_FldValue      : fields.Nested(m_Description, skip_none=True),
-                        shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
-                        shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
-                        shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
-                        shr.s_FldErrMsg     : fields.String(description=shr.s_DescErrMsg)
-                    })
+            {   shr.s_FldValue      : fields.Nested(m_Description, skip_none=True),
+                shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
+                shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
+                shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
+                shr.s_FldErrMsg     : fields.String(description=shr.s_DescErrMsg)
+            })
 
 # --------------------------------------
 # For the /v1/configureddevices endpoint
@@ -82,8 +84,8 @@ s_FldDevType    = 'DeviceType'
 s_FldDevNum     = 'DeviceNumber'
 s_FldUniqId     = 'UniqueID'
 
-m_DeviceConfiguration       = api.model('DeviceConfiguration', 
-                    {   
+m_DeviceConfiguration       = api.model('DeviceConfiguration',
+                    {
                         s_FldDevName        : fields.String(description='A short name for this device that a user would expect to see in a list of available devices.'),
                         s_FldDevType        : fields.String(description='One of the supported ASCOM Devices types such as Telescope, Camera, Focuser etc.'),
                         s_FldDevNum         : fields.Integer(description='The device number that must be used to access this device through the Alpaca Device API.'),
@@ -107,7 +109,7 @@ m_ConfiguredDevicesResponse = api.model('ConfiguredDevicesResponse',
 # APIVersions
 # -----------
 #
-@api.route('/apiversions', methods=['GET']) 
+@api.route('/apiversions', methods=['GET'])
 @api.response(400, shr.s_Resp400Missing, m_ErrorMessage)
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class apiversions(Resource):
@@ -132,7 +134,7 @@ DescData =  {
                 s_FldLocation       : "The Great American West"
             }
 
-@api.route('/v1/description', methods=['GET']) 
+@api.route('/v1/description', methods=['GET'])
 @api.response(400, shr.s_Resp400Missing, m_ErrorMessage)
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class description(Resource):
@@ -156,11 +158,11 @@ for i in RotatorAPI.rRot:
         s_FldDevName        : 'Alpaca Rotator Simulator',
         s_FldDevType        : 'Rotator',
         s_FldUniqId         : "5897B4BC-2A4D-4893-8CC0-6A440D6B2D51"
-        }   
+        }
     confi[s_FldDevNum] = i
     ConfData.append(confi)
 
-@api.route('/v1/configureddevices', methods=['GET']) 
+@api.route('/v1/configureddevices', methods=['GET'])
 @api.response(400, shr.s_Resp400Missing, m_ErrorMessage)
 @api.response(500, shr.s_Resp500SrvErr, m_ErrorMessage)
 class configureddevices(Resource):

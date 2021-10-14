@@ -1,9 +1,12 @@
-#
+# pylint: disable=C0301,C0103,C0111,W0603
+# For W0603 'Using Global statement" I believe this is correct.
 # Common strings and form functions
 #
 # 23-Jan-2021  rbd  V0.8 Common version strings for form footers, etc.
 # 10-Oct-2021  rbd  V0.9 Python 3.7, updatated packages.
+# 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
 #
+from threading import Lock
 import ASCOMErrors
 
 # -----------
@@ -72,16 +75,17 @@ def get_form_caseless(name, form, default):
 # PropertyResponse
 # ------------------
 # Construct the response for a property-get. Common to all
-# of the properties in this driver. Models (see below) 
+# of the properties in this driver. Models (see below)
 # differ to specify data type and documentation of Value.
 # NOTE: the api.marshal_with(..., skip_none=True) stops missing fields from coming back with value null
 #
 class PropertyResponse(dict):
     def __init__(self, value, args, err = ASCOMErrors.Success):
+        #dict.__init__()
         self.ServerTransactionID = getNextTransId()
         self.Value = value
         ctid = get_args_caseless(s_FldCtId, args, 1)
-        if (not ctid is None):
+        if not ctid is None:
             self.ClientTransactionID = ctid
         else:
             self.ClientTransactionID = 0        # Per Alpaca, Return a 0 if ClientTransactionId is not in the request
@@ -94,9 +98,10 @@ class PropertyResponse(dict):
 #
 class MethodResponse(dict):
     def __init__(self, form, err = ASCOMErrors.Success):
+        #dict.__init__()
         self.ServerTransactionID = getNextTransId()
         ctid = get_args_caseless(s_FldCtId, form, 1)
-        if (not ctid is None):
+        if not ctid is None:
             self.ClientTransactionID = ctid
         else:
             self.ClientTransactionID = 0        # Per Alpaca, Return a 0 if ClientTransactionId is not in the request
@@ -107,20 +112,13 @@ class MethodResponse(dict):
 # -------------------------------
 # Thread-safe ServerTransactionID
 # -------------------------------
-import os
-from threading import Lock
+_lock = Lock()
+_tid = 0
 
-def init():
-    global _lock
-    global _tid
-    _lock = Lock()
-    _tid = 0
-
+# Pylint flags the use of global here but I think it is right
 def getNextTransId():
-    global _tid
-    global _lock
-    _lock.acquire();
+    global _tid     # False lint "Using the global statement" ??
+    _lock.acquire()
     _tid += 1
     _lock.release()
-    return _tid 
-
+    return _tid

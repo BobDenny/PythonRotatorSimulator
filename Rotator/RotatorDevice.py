@@ -1,7 +1,9 @@
+# pylint: disable=C0301,C0103,C0111
 #
 # Implements a Rotator device
 #
 # 16-Mar-2019   rbd Add steps_per_sec property, add setters to step_size and steps_per_sec for setup form
+# 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
 #
 from threading import Timer
 from threading import Lock
@@ -24,7 +26,7 @@ class RotatorDevice(object):
         # Rotator device state variables
         #
         self._reverse = False
-        self._position = 0.0 
+        self._position = 0.0
         self._target_position = 0.0
         self._is_moving = False
         self._connected = False
@@ -90,7 +92,7 @@ class RotatorDevice(object):
         print('[stop] Stopping...')
         self._stopped = True
         self._is_moving = False
-        if self._timer != None:
+        if self._timer is not None:
             self._timer.cancel()
         self._timer = None
         self._lock.release()
@@ -213,4 +215,3 @@ class RotatorDevice(object):
     def Halt(self):
         print('[Halt]')
         self.stop()
-
