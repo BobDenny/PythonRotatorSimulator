@@ -60,3 +60,4 @@
 and transferred back to a2.dc3.com. Now... will git on the RPi be able to sync?? Not yet, I got a WARNING UNPROTECTED PRIVATE KEY FILE! Permissions 0644 for /home/pi/.ssh/id_rsa are too open... etc. Tried Chmod 600 with user pi. Nope. still asking for ssh-askpass which means the pubkey login is not ok. The3 privkey does NOT need s password.
 **BZZZT ** The pubkey goes into ~/.rsa/known-hosts on the A2 svn.dc3.com site you doofus. 
 **SUCCESS** I can sync from VSCode on the RPI #1. ** BOOYAH**
+* Damn after a successful sync I still have the old Bob's Journal on the PI after updting it on Windows. 
