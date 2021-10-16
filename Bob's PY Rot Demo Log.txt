@@ -62,3 +62,7 @@ Well I also noticed that the Requirements.txt from Jan 2019 had a package -tform
 
 === SEE Bob's Journal with VSCode (on Rpi) for more activities buiding the environment ===
 
+16-Oct-2020
+-----------
+* More adventures with Git with VSCode on RPi and Windows and in VS2019 on Windows. Commits, edits from both sides, merges. Getting the .gitignore file universal for all three environments.
+* NOTE: The SSH on Windows uses ssh://a2_svn_dc3/... while it uses ssh://svn.dc3.com:7822/... on RPi. This has to do woth the B.S. lashop of Putty etc that is needed. I have SO forgotten how all of that shit works. Same for Subversion ssh:// which uses that svn.dc3.com host on A2. This applies to Tortoise SVN, Tortoise Git, VS2019, and VSCode on Windows. All of the ssh:// URLs somehow run through the same crap PUTTY/PLINK/??? MICKEY MOUSE SHIT!!
