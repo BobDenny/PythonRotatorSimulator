@@ -271,7 +271,9 @@ __pycache__/
 /Rotator/rotator-demo/Lib/site-packages
 /Bob's Raspberry Pi 4 #1 Notes.txt - Shortcut.lnk
 /Bob's Pi 3 SystemLog.txt - Shortcut.lnk
-/ASCOM.AlpacaDynamic1.Rotator.Validation.txt\
+/ASCOM.AlpacaDynamic1.Rotator.Validation.txt
+
 # (rbd) Specific to this VSCode workspace on the RPi
 .venv/
 .vscode/settings.json
+ASCOM.AlpacaDynamic1.Rotator.Validation.txt
