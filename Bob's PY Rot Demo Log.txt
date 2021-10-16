@@ -54,18 +54,11 @@ Well I also noticed that the Requirements.txt from Jan 2019 had a package -tform
    12. AH! I found right-clicking the partially created environment in the Solution Explorer has "Install from Requirements.txt" which will ADD to an existing env. SO the failed one contains the fucking old pip. I upgraded it. Then I did "Install from requirements.txt". Failed again on dataclasses=0.8.
    13. Edit requirements.txt to change to 0.6 === HOORAY I HAVE THE 3.7 VIRT ENV ===
    14. Amazingly now with 3.7 and the current PIP I can update jsonschema to 4.1.0. No luck on dataclasses 0.8 only 0.6.
-== LESSONS LEARNED ==
-* YOu can crate a clean virt env with just pip and setuptools.
+== LESSONS LEARNED (VS 2019) ==
+* You can create a clean virt env that contains just pip and setuptools.
 * After doing this, go  in and update pip and setuptools as indicated
 * THEN you can add packages via a requirements.txt
 **** IT WORKS ****
 
-
-   
-   
-   
-   
-
-
-
+=== SEE Bob's Journal with VSCode (on Rpi) for more activities buiding the environment ===
 

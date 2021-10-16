@@ -1,6 +1,6 @@
 12-Oct-2021
 -----------
-* Following MS code.visualsudio.com/docs/python/environments#_create-a-virtual-environment <-- MUST SAVE THIS URL!!!!
+* Following MS https://code.visualstudio.com/docs/python/environments#_create-a-virtual-environment <-- MUST SAVE THIS URL!!!!
   1. VSCode Terminal -> Install globally python3-venv (was already there)
   2. Read the Python info at https://docs.python.org/3/library/venv.html
   3. VSCode Terminal (already in the ~/RotatorDemo folder) Created the .venv virtual environment via python3 -m venv .venv ... 
@@ -61,3 +61,34 @@ and transferred back to a2.dc3.com. Now... will git on the RPi be able to sync??
 **BZZZT ** The pubkey goes into ~/.rsa/known-hosts on the A2 svn.dc3.com site you doofus. 
 **SUCCESS** I can sync from VSCode on the RPI #1. ** BOOYAH**
 * Damn after a successful sync I still have the old Bob's Journal on the PI after updating it on Windows. This time it worked WTF??? Gonna do this again, commit on Windows, Sync/push, and then pulll on RPi.
+
+16-Oct-2021
+-----------
+* Now let's get the RotatorDemo in the RPi to have a virtual environment and then clean out the main Python 3.7 environment. 
+  ========================================================================
+  ==== HOW TO CREATE A FRESH VIRTUAL ENVIRONMENT FOR PYTHON WORKSPACE ====
+  ========================================================================
+  1. Review https://code.visualstudio.com/docs/python/environments#_create-a-virtual-environment ... this resulted in the  venv popup and I selected it. 
+  2. Command Palette: Ctrl-Shift-P -> python: Select Interpreter -> Select the one that has the .venv specified.
+  3. BooYah!! Close out the terminal and open a new one. Now it plainly shows that the terminal is running in the VE. You can see that it executed the magic `source /home/pi/RotatorDemo/.venv/bin/activate
+  4. No more `python3`, `which python` returns /home/pi/RotatorDemo/.venv/bin/python YEAH!!
+  5. First task, upgrade the local pip from 18.1 to the current 21.2 
+       'TATTOO INCANTATION' python -m pip install --upgrade pip
+     Surprising result: Cache entry deserialization failed, entry ignored (x 2), but, 
+     Using cached https://files.pythonhosted.org/packages/90/a9/1ea3a69a51dcc679724e3512fc2aa1668999eed59976f749134eb02229c8/pip-21.3-py3-none-any.whl
+     net result is that my Pip is at 21.3, the current
+  8. Reading onward, Command Palette -> python: select linter -> pylint In Explorer, .venv and .vscode turn green.
+  9. Open a .py file, asks if want to install pylint (into the venv!!) and it's now installed into the .venv. It has not yet detected the missing packages in the .venv :-(
+  10. Saving the .py file immediately shows 930 untracked files in the Source Control window. View as tree, then right-click .venv, "add to .gitignore". WOW!!! This added every file under .venv!! Why? I manually deleted all that shit and added simply ".venv/" and that did it. Also added .vscode/settings.json as these are VSCode settings that I don't want synced by Git. I use the VSCode settings sync.
+  11. Tried to run and linter immediately flagged the 'flask' package as missing. So... 
+  12. pip install -r requirements.txt OK, except no flask-restx. Don't understand, it's there in requirements.txt. Manually installed with pip.
+** RotatorDemo runs in virtual environment **
+* Create a VSCode WOrkspace for the RotatorDemo, then close it in anticipation of cleaning out the RotatorDemo-specific packages from the global Python 3.7 environment.
+* Install the AWESOME Pip Manager extension. Brand new magic for managing Pip packages. 
+  1. Assure the Workspace is closed puttint the environment in the Python 3.7.3 64-bit environment. Verify by looking in the lower left corner. NO .VENV.
+  2. Open a terminal and make sure no .venv
+  3. open the Pip Manager and start removing the obvious packages that are in requirements.txt. BE CAREFUL!!! <=== NEVER MIND!! DANGEROUS
+
+
+  
+
