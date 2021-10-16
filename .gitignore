@@ -260,7 +260,7 @@ paket-files/
 __pycache__/
 *.pyc
 
-# (rbd) Specific to this VS2019 solution
+# (rbd) Specific to this VS2019 solution (leading / relative this this VS2019 project/VSCode workspace
 /Rotator/env
 /Conform Validation
 /dist
@@ -272,8 +272,6 @@ __pycache__/
 /Bob's Raspberry Pi 4 #1 Notes.txt - Shortcut.lnk
 /Bob's Pi 3 SystemLog.txt - Shortcut.lnk
 /ASCOM.AlpacaDynamic1.Rotator.Validation.txt
-
-# (rbd) Specific to this VSCode workspace on the RPi
-.venv/
-.vscode/settings.json
-ASCOM.AlpacaDynamic1.Rotator.Validation.txt
+# (rbd) Specific to this VSCode workspace on the RPi (leading /)
+/.venv/
+/.vscode/settings.json
