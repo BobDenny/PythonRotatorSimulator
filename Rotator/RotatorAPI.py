@@ -3,8 +3,10 @@
 # ==================
 # ALPACA ROTATOR API
 # ==================
-# 15-Jul-2020   rbd     FLask-RestPlus is dead -> Flask-RestX
-# 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
+# 15-Jul-2020   rbd FLask-RestPlus is dead -> Flask-RestX
+# 13-Oct-2021   rbd 0.9 Linting with some messages disabled, no docstrings
+# 18-Oct-2021   rbd 0.9 'interfaceversion' returns an integer, add model
+#                   m_IntegerResponse
 
 from flask import Blueprint, request, abort
 from flask_restx import Api, Resource, fields
@@ -64,6 +66,14 @@ m_ErrorMessage = api.model(shr.s_FldErrMsg, {shr.s_FldValue : fields.String(desc
 
 m_BoolResponse = api.model('BoolResponse',
             {   shr.s_FldValue      : fields.Boolean(description='True or False value.', required=True),
+                shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
+                shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
+                shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
+                shr.s_FldErrMsg     : fields.String(description=shr.s_DescErrMsg)
+            })
+
+m_IntegerResponse = api.model('IntegerResponse',
+            {   shr.s_FldValue      : fields.Integer(description='Integer value.', required=True),
                 shr.s_FldCtId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescCtId),
                 shr.s_FldStId       : fields.Integer(min=0, max=4294967295, description=shr.s_DescStId),
                 shr.s_FldErrNum     : fields.Integer(min=0, max=0xFFF, description=shr.s_DescErrNum),
@@ -323,7 +333,7 @@ class driverversion(Resource):
 class interfaceversion(Resource):
 
     @api.doc(description='The interface version number that this device supports. Should return 2 for this interface version.')
-    @api.marshal_with(m_StringResponse, description=shr.s_DescGetRsp, skip_none=True)
+    @api.marshal_with(m_IntegerResponse, description=shr.s_DescGetRsp, skip_none=True)
     @api.param(shr.s_FldClId, shr.s_DescClId, 'query', type='integer', default='1234')
     @api.param(shr.s_FldCtId, shr.s_DescCtId, 'query', type='integer', default='1')
     def get(self, DeviceNumber):

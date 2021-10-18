@@ -275,3 +275,4 @@ __pycache__/
 # (rbd) Specific to this VSCode workspace on the RPi (leading /)
 /.venv/
 /.vscode/settings.json
+/.vscode/launch.json
