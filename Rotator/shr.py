@@ -5,6 +5,8 @@
 # 23-Jan-2021  rbd  V0.8 Common version strings for form footers, etc.
 # 10-Oct-2021  rbd  V0.9 Python 3.7, updatated packages.
 # 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
+# 17-Oct-2021  rbd  0.9 Use Python with: statement for cross-thread protection 
+#                       of getNextTransId(). Update DriverVerDate
 #
 from threading import Lock
 import ASCOMErrors
@@ -13,7 +15,7 @@ import ASCOMErrors
 # Driver Info
 # -----------
 m_DriverVersion = '0.9'                                 # Major.Minor only also used in form footers
-m_DriverVerDate = '12-Oct-2021'                         # Form footers
+m_DriverVerDate = '17-Oct-2021'                         # Form footers
 m_DriverAPIVersions = [1]                               # Supported API Versions
 
 
@@ -115,10 +117,8 @@ class MethodResponse(dict):
 _lock = Lock()
 _tid = 0
 
-# Pylint flags the use of global here but I think it is right
 def getNextTransId():
-    global _tid     # False lint "Using the global statement" ??
-    _lock.acquire()
-    _tid += 1
-    _lock.release()
+    with _lock:
+        global _tid                             # Why  this and not _lock?!?!?!?
+        _tid += 1
     return _tid
