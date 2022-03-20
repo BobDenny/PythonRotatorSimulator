@@ -1,7 +1,7 @@
 ASCOM Alpaca Rotator Simulator in Python
 ----------------------------------------
 
-Version: 0.8 (23-Jan-2021)
+Version: 0.9 (December 2021)
 By: Bob Denny <rdenny@dc3.com>
 
 This ASCOM Alpaca Standard Rotator simulator will run on Python 3.7 or later (and probably some earlier Python 3s, I won't comment on Python 2.x)
@@ -11,7 +11,7 @@ Installation and Test
 
 (1) PRE-REQUISITES - The file requirements.txt lists the required Python packages and their versions.
 
-So on the target device (raspberry Pi), use PIP3 to install the packages listed in requirements.txt (sudo pip3 install xxxxx) Some of them are dependencies so you may only need to install
+So on the target device (raspberry Pi), use PIP3 to install the packages listed in requirements.txt. Your toolset may be able to create a virtual environment from requirements.txt and if so that's excellent.
 
 * Flask
 * Flask-RESTX
@@ -55,9 +55,19 @@ Feel free to connect to this from TheSky X on Windows and play with TheSky's Fie
 
 KEEP IN MIND THAT THESE TESTS USE WINDOWS ONLY BECAUSE THERE ARE NOT YET ANY ALPACA ROTATOR CLIENTS so you're using the Platform 6.5's automatic Alpaca Dynamic Driver feature to reach out beyond Windows to your Linux device. ALPACA AND THE ROTATOR SIMULATOR ARE NOT DEPENDENT ON WINDOWS!!!
 
+Working with this in Visual Studio Code
+---------------------------------------
+Right-click the Rotator folder and select Visual Studio Code to open the project. Start with the Python 3.7 or later master environment. I suggest you create a virtual environment using Requirements.txt 
+
+$ python3 -m venv .venv
+--  exit and restart terminal and see that is using .venv --
+$ pip install -r requirements.txt
+
+The main program (as usual) is app.py. Run it from the Python command or the VSCode debugger. Try testing with the new ConformU or from the old Windows Conform via an Alpaca dynamic driver.. You should get a valid test. 
+ 
 Working with this in Visual Studio 2019
 ---------------------------------------
-Included with this package is a Visual Studio 2019  Solution file RotatorDemo.sln. It assumes that the rest of the files are in a subfolder Rotator below the solution file and requirements.txt. Assuming you already have installed Python 3 support, requirements.txt is enough to have VS2019 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. Locate the 'env' Python Environment, select Packages PyPI and bring things up to date. Or you can add an environment (VS command in the Python Environments pane) and use Requirements.txt as the list of packages you need. I hope you're somewhat familiar with this. I barely know enough to get along so don't be discouraged
+Included with this package is a Visual Studio 2019  Solution file RotatorDemo.sln. It assumes that the rest of the files are in a subfolder Rotator below the solution file and requirements.txt. Assuming you already have installed Python 3 support, requirements.txt is enough to have VS2019 build you a Python3 virtual environment under which you can not only run, but also develop, test, and debug with the Python visual debugger. You can add an environment (VS command in the Python Environments pane) and use Requirements.txt as the list of packages you need. I hope you're somewhat familiar with this.
 
 The objective, though, is to have this Alpaca Rotator run on a Raspberry Pi or other lightweight platform that supports Python 3.6 or later. ALWAYS USE PYTHON3 and PIP3 unless you're SURE your system won't take you to Python 2.x with python or pip.
 
