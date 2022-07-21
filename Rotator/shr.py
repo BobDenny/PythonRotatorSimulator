@@ -7,6 +7,7 @@
 # 13-Oct-2021  rbd  0.9 Linting with some messages disabled, no docstrings
 # 17-Oct-2021  rbd  0.9 Use Python with: statement for cross-thread protection 
 #                       of getNextTransId(). Update DriverVerDate
+# 20-Jul-2022   rbd 1.0 Updated version and date.
 #
 from threading import Lock
 import ASCOMErrors
@@ -14,8 +15,8 @@ import ASCOMErrors
 # -----------
 # Driver Info
 # -----------
-m_DriverVersion = '0.9'                                 # Major.Minor only also used in form footers
-m_DriverVerDate = '17-Oct-2021'                         # Form footers
+m_DriverVersion = '1.0'                                 # Major.Minor only also used in form footers
+m_DriverVerDate = '20-Jul-2022'                         # Form footers
 m_DriverAPIVersions = [1]                               # Supported API Versions
 
 

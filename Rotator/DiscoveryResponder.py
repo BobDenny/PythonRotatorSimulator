@@ -2,36 +2,53 @@
 # =======================
 # DISCOVERY API RESPONDER
 # =======================
-# 15-Jul-2020   rbd     Final V4-only discovery responder. IPV6 would be in another
+# 15-Jul-2020   rbd     V4-only discovery responder. IPV6 would be in another
 #                       thread.
+# 19-Jul-2022   rbd     Formalize discovery for proper use of multicast send/receive.
+#
 import os
 import socket                                           # for discovery responder
 from threading import Thread                            # Same here
 
 class DiscoveryResponder(Thread):
-    def __init__(self, ADDR, PORT):
+    def __init__(self, MCAST, ADDR, PORT):
         Thread.__init__(self)
-        self.device_address = (ADDR, 32227) #listen for any IP on Alpaca disc. port
+        # See https://stackoverflow.com/a/32372627/159508
+        # It's a sledge hammer technique to bind to ' ' for sending multicast
+        # The right way is to bind to the broadcast address for the current
+        # subnet. 
+        self.device_address = (MCAST, 32227)    # Listen at multicast address, not ' '
         self.alpaca_response  = "{\"alpacaport\": " + str(PORT) + "}"
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  #share address
+        self.rsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.rsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  #share address
         if os.name != 'nt':
             # needed on Linux and OSX to share port with net core. Remove on windows
-            self.sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            self.rsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         try:
-            self.sock.bind(self.device_address)
+            self.rsock.bind(self.device_address)
         except:
-            print('Discovery responder: failure to bind')
-            self.sock.close()
-            self.sock = 0
+            print('Discovery responder: failure to bind receive socket')
+            self.rsock.close()
+            self.rsock = 0
             raise
+
+        self.tsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.tsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  #share address
+        try:
+             self.tsock.bind((ADDR, 0))
+        except:
+            print('Discovery responder: failure to bind send socket')
+            self.tsock.close()
+            self.tsock = 0
+            raise
+           
         # OK start the listener
         self.daemon = True
         self.start()
     def run(self):
         while True:
-            data, addr = self.sock.recvfrom(1024)
+            data, addr = self.rsock.recvfrom(1024)
             datascii = str(data, 'ascii')
             print('Disc rcv ' + datascii + ' from ' + str(addr))
             if 'alpacadiscovery1' in datascii:
-                self.sock.sendto(self.alpaca_response.encode(), addr)
+                self.tsock.sendto(self.alpaca_response.encode(), addr)

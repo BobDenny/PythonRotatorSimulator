@@ -35,6 +35,9 @@
 #                   dropdown for selecting which device to set up work (was stubbed out).
 # 12-Oct-2021   rbd Version 0.9 PyLint (VSCode Linux) corrections. No more Lint warnings. shr module
 #                   no longer has init().
+# 20-Jul-2022   rbd Version 1.0 Upgraded discovery. Testing with the latest of the packages out there.
+#                   Repo moved from DC-3 Dreams private git server to GitHub  for eventual release
+#                   as ASCOM Initiative sample. f-strings (modern me!)
 # =================================================================================================
 
 # ===============================
@@ -92,7 +95,7 @@ import DiscoveryResponder
 # Production server only
 # ----------------------
 # Uncomment if using gevent/WSGIServer, see the SERVER APPLICAITION section below
-#from gevent.pywsgi import WSGIServer
+# from gevent.pywsgi import WSGIServer
 
 #import ASCOMErrors                                     # All Alpaca Devices
 
@@ -101,18 +104,26 @@ import DiscoveryResponder
 # ----------------
 if os.name == 'nt':                                     # This is really Windows (my dev system eh?)
     HOST = '127.0.0.1'
-    print(' * Running under Visual Studio for Development... ' + HOST)
+    MCAST = '127.0.0.255'
+    print(f' * Running on Windows for Development... {HOST}')
+    print(f' * Assuming broadcast address is {MCAST}')
 else:
-# Unbelievable what you need to do to get your live
-# IP address on Linux (which one????)
-    HOST = '192.168.0.42'
-    print(' * Assuming run on Raspberry Pi Linux ' + HOST)
-PORT = 5555                                             # Port on which Alpaca interface(s) respond
+#
+# Unbelievable what you need to do to get your live IP address
+# on Linux (which one????) and even more fun to know the 
+# correct multicast address. This is a sample so I just hard code
+# both here. See ipsddress and netifaces if you want some fun.
+#
+    HOST = '192.168.0.42'                               # Your device's IP(V4) address
+    MCAST = '192.168.0.255'                             # Discovery: Depends on your CIDR block
+    print(f' * Assuming run on Raspberry Pi Linux {HOST}')
+PORT = 5555                                             # Port on which the device responds
 
-print(' * Simulator accessible via Alpaca at ' + HOST + ':' + str(PORT))
-print('   For mangement home page http://' + HOST + ':' + str(PORT) + '/')
+sprt = str(PORT)
+print(f' * Simulator accessible via Alpaca at {HOST}:{sprt}')
+print(f'   For mangement home page http://{HOST}:{sprt}/')
 
-_DSC = DiscoveryResponder.DiscoveryResponder(HOST, PORT)
+_DSC = DiscoveryResponder.DiscoveryResponder(MCAST, HOST, PORT)
 
 
 # ===============================
