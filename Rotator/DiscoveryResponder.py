@@ -5,6 +5,8 @@
 # 15-Jul-2020   rbd     V4-only discovery responder. IPV6 would be in another
 #                       thread.
 # 19-Jul-2022   rbd     Formalize discovery for proper use of multicast send/receive.
+# 21-Aug-2022   rbd     Fix capitalization of discovery response AlpacaPort per spec.
+#
 #
 import os
 import socket                                           # for discovery responder
@@ -18,7 +20,7 @@ class DiscoveryResponder(Thread):
         # The right way is to bind to the broadcast address for the current
         # subnet. 
         self.device_address = (MCAST, 32227)    # Listen at multicast address, not ' '
-        self.alpaca_response  = "{\"alpacaport\": " + str(PORT) + "}"
+        self.alpaca_response  = "{\"AlpacaPort\": " + str(PORT) + "}"
         self.rsock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.rsock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  #share address
         if os.name != 'nt':
